@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { User } from './modules/user/user.entity';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { User } from './modules/user/user.entity';
       synchronize: true, // Creates the database and tables automatically
       entities: [User],
     }),
-    TypeOrmModule.forFeature([User])
+    TypeOrmModule.forFeature([User]),
+    UserModule
   ],
   controllers: [AppController],
   providers: [AppService],
