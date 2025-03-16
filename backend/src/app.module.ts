@@ -5,6 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { User } from './modules/user/user.entity';
 import { UserModule } from './modules/user/user.module';
+import { Product } from './modules/product/product.entity';
+import { ProductModule } from './modules/product/product.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { LostItem } from './modules/lost-items/lostitems.entity';
+import { LostItemModule } from './modules/lost-items/lostitems.module';
 
 @Module({
   imports: [
@@ -18,10 +23,13 @@ import { UserModule } from './modules/user/user.module';
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true, // Creates the database and tables automatically
-      entities: [User],
+      entities: [User, Product, LostItem],
     }),
-    TypeOrmModule.forFeature([User]),
-    UserModule
+    TypeOrmModule.forFeature([User, LostItem]),
+    UserModule,
+    ProductModule,
+    AuthModule,
+    LostItemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
