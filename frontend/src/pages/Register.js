@@ -11,7 +11,43 @@ const Register = () => {
     confirmPassword: "",
   });
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const navigate = useNavigate();
+
+  const validateForm = () => {
+    const { name, email, password, confirmPassword } = formData;
+
+    if (!name || !email || !password || !confirmPassword) {
+      return "All fields are required";
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return "Invalid email address";
+    }
+
+    if (password.length < 8) {
+      return "Password must be at least 8 characters long";
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number";
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return "Password must contain at least one special character";
+    }
+
+    if (password !== confirmPassword) {
+      return "Passwords do not match";
+    }
+
+    return null;
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,9 +56,9 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Password confirmation check
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -32,7 +68,8 @@ const Register = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate("/login");
+      setSuccess("Registration successful! Redirecting...");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       console.error("Registration error:", err);
       setError(
@@ -51,9 +88,7 @@ const Register = () => {
               <h2 className="text-3xl font-bold tracking-tight text-white">
                 Create Your Account
               </h2>
-              <p className="mt-2 text-lg text-indigo-100">
-                Join our community today
-              </p>
+              <p className="mt-2 text-lg text-indigo-100">Join our community</p>
             </div>
           </div>
 
@@ -67,19 +102,17 @@ const Register = () => {
                 >
                   Full Name
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="John Doe"
-                  />
-                </div>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="John Doe"
+                />
               </div>
 
               <div>
@@ -89,19 +122,17 @@ const Register = () => {
                 >
                   Email address
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="you@example.com"
-                  />
-                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="you@example.com"
+                />
               </div>
 
               <div>
@@ -111,19 +142,17 @@ const Register = () => {
                 >
                   Password
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="••••••••"
-                  />
-                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="••••••••"
+                />
               </div>
 
               <div>
@@ -133,24 +162,28 @@ const Register = () => {
                 >
                   Confirm Password
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="••••••••"
-                  />
-                </div>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3 text-base border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="••••••••"
+                />
               </div>
 
               {error && (
                 <div className="p-4 rounded-md bg-red-50">
                   <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              {success && (
+                <div className="p-4 rounded-md bg-green-50">
+                  <p className="text-sm text-green-600">{success}</p>
                 </div>
               )}
 
@@ -173,14 +206,12 @@ const Register = () => {
                 </label>
               </div>
 
-              <div>
-                <button
-                  type="submit"
-                  className="flex justify-center w-full px-4 py-2 text-lg font-medium text-white border border-transparent rounded-md shadow-sm bg-neutral-900 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Create Account
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="flex justify-center w-full px-4 py-2 text-lg font-medium text-white border border-transparent rounded-md shadow-sm bg-neutral-900 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                Create Account
+              </button>
             </form>
 
             <div className="mt-6">
@@ -195,14 +226,12 @@ const Register = () => {
                 </div>
               </div>
 
-              <div className="mt-5">
-                <button
-                  onClick={() => navigate("/login")}
-                  className="flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Sign in to your account
-                </button>
-              </div>
+              <button
+                onClick={() => navigate("/login")}
+                className="flex justify-center w-full px-4 py-2 mt-5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                Sign in to your account
+              </button>
             </div>
           </div>
         </div>

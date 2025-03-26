@@ -1,28 +1,29 @@
 // src/components/Footer.jsx
 import React from "react";
 
-const Footer = ({ companyName = "Lost & Found System", additionalContent }) => {
+const Footer = ({ companyName = "Lost & Found System" }) => {
   const currentYear = new Date().getFullYear();
-  
+
   return (
-    <footer className="py-2 mt-7 text-center text-gray-400 bg-slate-800">
-      <div className="container px-4 mx-auto">
-        <p>&copy; {currentYear} {companyName}. All rights reserved.</p>
-        
-        {/* Optional additional content from props */}
-        {additionalContent && (
-          <div className="mt-2">
-            {additionalContent}
-          </div>
-        )}
-        
+    <footer className="absolute bottom-0 w-full py-3 mt-6 text-center text-gray-400 bg-slate-800">
+      <div className="container px-2 flex items-center justify-between mx-auto">
+        <small>
+          &copy; {currentYear} {companyName}. All rights reserved.
+        </small>
+
         {/* Default footer links that all members get */}
-        <div className="flex justify-center mt-4 space-x-4">
-          <a href="/privacy" className="hover:text-white">Privacy Policy</a>
+        <div className="flex space-x-2">
+          <small href="/privacy" className="hover:text-white">
+            Privacy Policy
+          </small>
           <span>•</span>
-          <a href="/terms" className="hover:text-white">Terms of Service</a>
+          <small href="/terms" className="hover:text-white">
+            Terms of Service
+          </small>
           <span>•</span>
-          <a href="/contact" className="hover:text-white">Contact Us</a>
+          <small href="/contact" className="hover:text-white">
+            Contact Us
+          </small>
         </div>
       </div>
     </footer>
