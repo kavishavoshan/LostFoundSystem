@@ -5,7 +5,7 @@ const Footer = ({ companyName = "Lost & Found System", additionalContent }) => {
   const currentYear = new Date().getFullYear();
   
   return (
-    <footer className="py-6 mt-8 text-center text-gray-400 bg-slate-800">
+    <footer className="py-2 mt-7 text-center text-gray-400 bg-slate-800">
       <div className="container px-4 mx-auto">
         <p>&copy; {currentYear} {companyName}. All rights reserved.</p>
         
