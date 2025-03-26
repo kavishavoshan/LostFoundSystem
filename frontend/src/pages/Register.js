@@ -46,7 +46,7 @@ const Register = () => {
       <main className="flex items-center justify-center flex-grow">
         <div className="w-full max-w-md mx-4 my-8 overflow-hidden bg-white rounded-lg shadow-2xl">
           {/* Header Section */}
-          <div className="px-8 py-10 bg-stone-950 sm:py-6">
+          <div className="px-8 py-10 bg-stone-950 sm:py-4">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight text-white">
                 Create Your Account
@@ -176,7 +176,7 @@ const Register = () => {
               <div>
                 <button
                   type="submit"
-                  className="flex justify-center w-full px-4 py-2 text-lg font-medium text-white border border-transparent rounded-md shadow-sm bg- hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="flex justify-center w-full px-4 py-2 text-lg font-medium text-white border border-transparent rounded-md shadow-sm bg-neutral-900 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
                   Create Account
                 </button>
@@ -189,13 +189,13 @@ const Register = () => {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 text-gray-500 bg-white">
+                  <span className="px-1 text-gray-500 bg-white">
                     Already have an account?
                   </span>
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-5">
                 <button
                   onClick={() => navigate("/login")}
                   className="flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
