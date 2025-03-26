@@ -1,15 +1,13 @@
-import { Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ProtectedRoute from "./components/ProtectedRoute";
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Messaging from './pages/Messaging';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/messages" element={<Messaging />} />
+      <Route path="/analytics" element={<Analytics />} />
     </Routes>
   );
 }
