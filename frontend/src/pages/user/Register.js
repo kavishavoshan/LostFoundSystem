@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { register } from "../api/auth";
+import { register } from "../../api/auth";
 import { useNavigate } from "react-router-dom";
-import Footer from "../components/UI/Footer";
+import Footer from "../../components/UI/Footer";
 
 const Register = () => {
   const [formData, setFormData] = useState({
