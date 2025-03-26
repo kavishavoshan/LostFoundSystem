@@ -18,6 +18,20 @@ export class MessagesService implements OnModuleInit {
     await this.createTestData();
   }
 
+  async getTestData() {
+    const users = await this.userRepository.find();
+    const messages = await this.messageRepository.find({
+      relations: ['sender', 'receiver'],
+    });
+
+    return {
+      users,
+      messages,
+      userCount: users.length,
+      messageCount: messages.length,
+    };
+  }
+
   private async createTestData() {
     // Create test users if they don't exist
     let user1 = await this.userRepository.findOne({ where: { email: 'user1@test.com' } });
