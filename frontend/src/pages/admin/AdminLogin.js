@@ -1,10 +1,10 @@
 import { useState, useContext } from "react";
-import { login } from "../api/auth";
-import { AuthContext } from "../context/AuthContext";
+import { login } from "../../api/auth";
+import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Footer from "../components/UI/Footer";
+import Footer from "../../components/UI/Footer";
 
-const Login = () => {
+const AdminLogin = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
   const { setUser } = useContext(AuthContext);
@@ -29,12 +29,12 @@ const Login = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <main className="flex items-center justify-center flex-grow">
-        <div className="w-full max-w-md mx-4 my-8 overflow-hidden bg-white rounded-lg shadow-2xl">
+        <div className="w-full  max-w-md mx-4 my-8 overflow-hidden bg-white rounded-lg shadow-2xl">
           {/* Header Section */}
           <div className="px-8 py-10 bg-zinc-900 sm:py-9">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight text-white">
-                Welcome Back
+                Admin
               </h2>
               <p className="mt-2 text-lg text-indigo-100">
                 Login to your account
@@ -46,7 +46,10 @@ const Login = () => {
           <div className="px-8 py-8 sm:px-10">
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email address
                 </label>
                 <div className="mt-1">
@@ -64,7 +67,10 @@ const Login = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password
                 </label>
                 <div className="mt-1">
@@ -95,13 +101,19 @@ const Login = () => {
                     type="checkbox"
                     className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                   />
-                  <label htmlFor="remember-me" className="block ml-2 text-sm text-gray-700">
+                  <label
+                    htmlFor="remember-me"
+                    className="block ml-2 text-sm text-gray-700"
+                  >
                     Remember me
                   </label>
                 </div>
 
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  <a
+                    href="#"
+                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  >
                     Forgot password?
                   </a>
                 </div>
@@ -118,27 +130,6 @@ const Login = () => {
             </form>
 
             {/* Register Section */}
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 text-gray-500 bg-white">
-                    Don't have an account?
-                  </span>
-                </div>
-              </div>
-              <div className="mt-5 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => navigate("/register")}
-                  className="px-14 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Register
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </main>
@@ -147,4 +138,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default AdminLogin;

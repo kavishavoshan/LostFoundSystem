@@ -81,7 +81,7 @@ const Header = () => {
           >
             {" "}
             {/* Adjusted login text color */}
-            Log in <span aria-hidden="true">&rarr;</span>
+            Log out <span aria-hidden="true">&rarr;</span>
           </a>
         </div>
       </nav>
