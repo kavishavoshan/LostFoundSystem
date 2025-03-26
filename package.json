@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@nestjs/platform-socket.io": "^11.0.12",
+    "@nestjs/websockets": "^11.0.12",
+    "chart.js": "^4.4.8",
+    "date-fns": "^4.1.0",
+    "react-chartjs-2": "^5.3.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  }
+}
