@@ -6,6 +6,11 @@ import { CreateMessageDto } from './dto/create-message.dto';
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
+  @Get('test-data')
+  async getTestData() {
+    return this.messagesService.getTestData();
+  }
+
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
     return this.messagesService.create(createMessageDto, createMessageDto.senderId);
