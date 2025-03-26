@@ -7,7 +7,7 @@ const Home = () => {
 
   return (
     <div>
-      <h2>Welcome to Dashboard</h2>
+      <h2>Welcome to a Dashboard</h2>
       <h1>Lost & Found System</h1>
         <LostItems />
       <button onClick={handleLogout}>Logout</button>
