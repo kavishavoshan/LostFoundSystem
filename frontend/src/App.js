@@ -10,6 +10,9 @@ import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Footer from "./components/UI/Footer";
 
+//ItemManagement
+import ItemDashboard from './pages/itemManagement/dashboard'
+
 function App() {
   return (
     <>
@@ -20,8 +23,10 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/user" element={<UserTable/>}/>
 
+        {/* ItemManagement */}
+        <Route path="/itemDashboard" element={<ItemDashboard/>}/>
       </Routes>
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 }
