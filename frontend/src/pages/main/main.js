@@ -79,7 +79,7 @@ function Main() {
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
             <button
-              onClick={() => (window.location.href = "/login")}
+              onClick={() => (window.location.href = "/adminlogin")}
               className="px-4 py-2 text-sm font-semibold text-gray-300 bg-gray-700 rounded-lg hover:bg-white hover:text-gray-900 transition"
             >
               Admin
