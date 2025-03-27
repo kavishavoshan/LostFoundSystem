@@ -10,7 +10,7 @@ const FoundItems = () => {
   const [newItem, setNewItem] = useState({
     itemName: "",
     imageUrl: "",
-    lostLocation: "",
+    foundLocation: "",
     contactNumber: "",
   });
 
@@ -32,7 +32,7 @@ const FoundItems = () => {
     try {
       await createLostItem(newItem);
       fetchItems();
-      setNewItem({ itemName: "", imageUrl: "", lostLocation: "", contactNumber: "" });
+      setNewItem({ itemName: "", imageUrl: "", foundLocation: "", contactNumber: "" });
     } catch (error) {
       console.error("Failed to add item");
     }
@@ -73,7 +73,7 @@ const FoundItems = () => {
                     type="text"
                     name="lostLocation"
                     id="lostLocation"
-                    value={newItem.lostLocation}
+                    value={newItem.foundLocation}
                     onChange={handleChange}
                     required
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
