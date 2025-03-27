@@ -1,14 +1,26 @@
 import { useContext, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
-// import LostItemsList from "../../components/itemManagement/LostItemsList";
-// import FoundItemsList from "../../components/itemManagement/FoundItemsList";
+import FoundItems from "../../components/itemManagement/FoundItems";
 import LostItems from "../../components/itemManagement/LostItems";
 import { Dialog } from "@headlessui/react";
 import { Bar } from "react-chartjs-2";
-import "../../chartConfig"; // Adjust path as needed
+import "../../chartConfig";
+import SimpleDataGrid from "../../components/itemManagement/SimpleDataGrid";
+
+const columns = [
+  { field: "id", headerName: "ID", width: 70 },
+  { field: "itemName", headerName: "Item Name", flex: 1 },
+  { field: "location", headerName: "Lost At", flex: 1 },
+  { field: "contact", headerName: "Contact", flex: 1 },
+];
+
+const rows = [
+  { id: 1, itemName: "Phone", location: "Library", contact: "1234567890" },
+  { id: 2, itemName: "Backpack", location: "Cafeteria", contact: "9876543210" },
+];
 
 const Dashboard = () => {
-  const { handleLogout } = useContext(AuthContext);
+  // const { handleLogout } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState("lost");
   const [showModal, setShowModal] = useState(false);
 
@@ -69,9 +81,9 @@ const Dashboard = () => {
           {/* Item Grid */}
           <div>
             {activeTab === "lost" ? (
-              <LostItems />
+              <SimpleDataGrid title="Lost Items" rows={rows} columns={columns} />
             ) : (
-              <LostItems />
+              <SimpleDataGrid title="Found Items" rows={rows} columns={columns} />
             )}
           </div>
         </div>
@@ -84,15 +96,28 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Modal */}
-        <Dialog open={showModal} onClose={handleCloseForm} className="relative z-50">
+        {/* Lost Item Dialog */}
+        <Dialog open={activeTab === "lost" && showModal} onClose={handleCloseForm} className="relative z-50">
           <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
           <div className="fixed inset-0 flex items-center justify-center p-4">
             <Dialog.Panel className="w-full max-w-2xl rounded bg-white p-6 shadow-lg">
               <Dialog.Title className="text-lg font-semibold text-darkBlue mb-4">
-                Add {activeTab === "lost" ? "Lost" : "Found"} Item
+                Add Lost Item
               </Dialog.Title>
               <LostItems onClose={handleCloseForm} />
+            </Dialog.Panel>
+          </div>
+        </Dialog>
+
+        {/* Found Item Dialog */}
+        <Dialog open={activeTab === "found" && showModal} onClose={handleCloseForm} className="relative z-50">
+          <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="w-full max-w-2xl rounded bg-white p-6 shadow-lg">
+              <Dialog.Title className="text-lg font-semibold text-darkBlue mb-4">
+                Add Found Item
+              </Dialog.Title>
+              <FoundItems onClose={handleCloseForm} />
             </Dialog.Panel>
           </div>
         </Dialog>
