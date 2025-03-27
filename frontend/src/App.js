@@ -10,10 +10,7 @@ import Login from "./pages/user/Login";
 import Register from "./pages/user/Register";
 import UserProfile from "./pages/user/Profile";
 
-import ProtectedRoute from "./components/ProtectedRoute";
 
-//Footer
-import Footer from "./components/UI/Footer";
 
 //ItemManagement
 import ItemDashboard from './pages/itemManagement/dashboard'

@@ -7,7 +7,7 @@ import Footer from "../../components/UI/Footer";
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
-  const { setUser } = useContext(AuthContext);
+  // const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,7 +18,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const data = await login(formData.email, formData.password);
-      setUser({ token: data.accessToken });
+      // setUser({ token: data.accessToken });
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
