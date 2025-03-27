@@ -4,7 +4,7 @@ const API_BASE_URL = "http://localhost:3001/lost-items"; // Adjust if needed
 
 export const getLostItems = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getgetLostItems`);
+    const response = await axios.get(`${API_BASE_URL}/getAllLostItems`);
     return response.data;
   } catch (error) {
     console.error("Error fetching lost items:", error);

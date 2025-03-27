@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { getLostItems, createLostItem } from "../../api/lostItems";
+import { getFoundItems, createFoundItem } from "../../api/foundItems";
 import { Input } from "../UI/input";
 import { Button } from "../UI/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../UI/card";
 import "../../styles/itemManagementCSS.css";
 
-const LostItems = () => {
+const FoundItems = () => {
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState({
     itemName: "",
     imageUrl: "",
-    lostLocation: "",
+    foundLocation: "",
     contactNumber: "",
   });
 
@@ -19,7 +19,7 @@ const LostItems = () => {
   }, []);
 
   const fetchItems = async () => {
-    const data = await getLostItems();
+    const data = await getFoundItems();
     setItems(data);
   };
 
@@ -30,9 +30,9 @@ const LostItems = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createLostItem(newItem);
+      await createFoundItem(newItem);
       fetchItems();
-      setNewItem({ itemName: "", imageUrl: "", lostLocation: "", contactNumber: "" });
+      setNewItem({ itemName: "", imageUrl: "", foundLocation: "", contactNumber: "" });
     } catch (error) {
       console.error("Failed to add item");
     }
@@ -43,8 +43,8 @@ const LostItems = () => {
       <form onSubmit={handleSubmit}>
         <div className="space-y-12">
           <div className="border-b border-gray-900/10 pb-12">
-            <h2 className="text-base font-semibold leading-7 text-gray-900">Report Lost Item</h2>
-            <p className="mt-1 text-sm leading-6 text-gray-600">Please provide accurate information about the lost item.</p>
+            <h2 className="text-base font-semibold leading-7 text-gray-900">Report Found Item</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-600">Please provide accurate information about the Found Item.</p>
 
             <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
               <div className="sm:col-span-3">
@@ -65,15 +65,15 @@ const LostItems = () => {
               </div>
 
               <div className="sm:col-span-3">
-                <label htmlFor="lostLocation" className="block text-sm font-medium leading-6 text-gray-900">
-                  Lost Location
+                <label htmlFor="foundLocation" className="block text-sm font-medium leading-6 text-gray-900">
+                  Found Location
                 </label>
                 <div className="mt-2">
                   <input
                     type="text"
-                    name="lostLocation"
-                    id="lostLocation"
-                    value={newItem.lostLocation}
+                    name="foundLocation"
+                    id="foundLocation"
+                    value={newItem.foundLocation}
                     onChange={handleChange}
                     required
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
@@ -157,4 +157,4 @@ const LostItems = () => {
   );
 };
 
-export default LostItems;
+export default FoundItems;
