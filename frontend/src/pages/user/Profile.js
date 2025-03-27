@@ -1,13 +1,14 @@
-import React from 'react'
-import Header from '../../components/UI/Header'
+import React from "react";
+import Header from "../../components/UI/Header";
 
 function Profile() {
   return (
     <>
-      <Header />
-      <div>AdminLogin</div>
+      
+      <div>AdmicccccccccccccccccccccccccnLogin</div>
+      <div>Profile</div>
     </>
-  )
+  );
 }
 
-export default Profile
+export default Profile;
