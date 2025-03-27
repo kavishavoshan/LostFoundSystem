@@ -86,88 +86,7 @@ function Main() {
             </button>
           </div>
         </nav>
-        {mobileMenuOpen && (
-          <div className="lg:hidden" role="dialog" aria-modal="true">
-            <div
-              className="fixed inset-0 z-50"
-              onClick={() => setMobileMenuOpen(false)}
-            ></div>
-            <div className="fixed inset-y-0 right-0 z-50 w-full px-6 py-6 overflow-y-auto bg-slate-800 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
-              {" "}
-              {/* Mobile menu background adjusted */}
-              <div className="flex items-center justify-between">
-                <a href="#" className="-m-1.5 p-1.5">
-                  <span className="sr-only">Your Company</span>
-                  <img
-                    className="w-auto h-28"
-                    src={logo} // Use the imported logo
-                    alt="Your Company Logo"
-                  />
-                </a>
-                <button
-                  type="button"
-                  className="-m-2.5 rounded-md p-2.5 text-gray-400"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="sr-only">Close menu</span>
-                  <svg
-                    className="size-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                    data-slot="icon"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18 18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-              <div className="flow-root mt-6">
-                <div className="-my-6 divide-y divide-gray-500/10">
-                  <div className="py-6 space-y-2">
-                    <a
-                      href="#"
-                      className="block px-3 py-2 -mx-3 font-semibold text-gray-300 rounded-lg text-base/7 hover:bg-slate-700" // Mobile menu items color adjusted
-                    >
-                      Item
-                    </a>
-                    <a
-                      href="#"
-                      className="block px-3 py-2 -mx-3 font-semibold text-gray-300 rounded-lg text-base/7 hover:bg-slate-700"
-                    >
-                      Features
-                    </a>
-                    <a
-                      href="#"
-                      className="block px-3 py-2 -mx-3 font-semibold text-gray-300 rounded-lg text-base/7 hover:bg-slate-700"
-                    >
-                      Community
-                    </a>
-                    <a
-                      href="#"
-                      className="block px-3 py-2 -mx-3 font-semibold text-gray-300 rounded-lg text-base/7 hover:bg-slate-700"
-                    >
-                      News
-                    </a>
-                  </div>
-                  <div className="py-6">
-                    <a
-                      href="#"
-                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-300 hover:bg-slate-700"
-                    >
-                      Log in
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        
       </header>
       <div className="relative px-6 isolate pt-14 lg:px-8">
         {/* ... (rest of your component content) ... */}
@@ -192,7 +111,7 @@ function Main() {
             <div className="flex items-center justify-center mt-10 gap-x-6">
               <a
                 href="/login"
-                className="py-3 text-lg font-semibold text-white bg-indigo-600 px-9 rounded-xl hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="py-3 text-lg font-semibold text-white bg-primary px-9 rounded-xl hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 Get started
               </a>
