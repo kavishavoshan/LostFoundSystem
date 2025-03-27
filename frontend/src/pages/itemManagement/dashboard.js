@@ -53,7 +53,7 @@ const [foundCount, setFoundCount] = useState(0);
       const formattedRows = items.map((item) => ({
         id: item.id,
         itemName: item.itemName,
-        location: item.lostLocation,
+        location: item.foundLocation,
         contact: item.contactNumber,
       }));
       setFoundItemRows(formattedRows);
