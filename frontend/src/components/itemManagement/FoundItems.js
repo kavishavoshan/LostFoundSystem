@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getLostItems, createLostItem } from "../../api/lostItems";
+import { getFoundItems, createFoundItem } from "../../api/foundItems";
 import { Input } from "../UI/input";
 import { Button } from "../UI/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../UI/card";
@@ -19,7 +19,7 @@ const FoundItems = () => {
   }, []);
 
   const fetchItems = async () => {
-    const data = await getLostItems();
+    const data = await getFoundItems();
     setItems(data);
   };
 
@@ -30,7 +30,7 @@ const FoundItems = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createLostItem(newItem);
+      await createFoundItem(newItem);
       fetchItems();
       setNewItem({ itemName: "", imageUrl: "", foundLocation: "", contactNumber: "" });
     } catch (error) {
@@ -65,14 +65,14 @@ const FoundItems = () => {
               </div>
 
               <div className="sm:col-span-3">
-                <label htmlFor="lostLocation" className="block text-sm font-medium leading-6 text-gray-900">
-                  Lost Location
+                <label htmlFor="foundLocation" className="block text-sm font-medium leading-6 text-gray-900">
+                  Found Location
                 </label>
                 <div className="mt-2">
                   <input
                     type="text"
-                    name="lostLocation"
-                    id="lostLocation"
+                    name="foundLocation"
+                    id="foundLocation"
                     value={newItem.foundLocation}
                     onChange={handleChange}
                     required
