@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Messaging from './pages/Messaging';
 import Analytics from './pages/Analytics';
-import { Routes, Route } from "react-router-dom";
 import Main from "./pages/main/main";
 import Home from "./pages/Home";
 
