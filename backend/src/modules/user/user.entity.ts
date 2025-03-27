@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, OneToMany, BeforeInsert, Create
 import { Product } from '../product/product.entity';
 import * as bcrypt from 'bcryptjs';
 import { Message } from '../messages/message.entity';
-import { FoundItem } from '../found-items/founditems.entity';
+import { FoundItem } from '../found-items/found-items.entity';
 
 @Entity()
 export class User {

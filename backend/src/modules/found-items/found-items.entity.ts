@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { User } from '../user/user.entity';
 
 @Entity()
 export class FoundItem {
@@ -16,4 +17,7 @@ export class FoundItem {
 
   @Column()
   contactNumber: string;
+
+  @ManyToOne(() => User, (user) => user.foundItems, { onDelete: 'CASCADE' })
+  finder: User;
 }
