@@ -5,7 +5,7 @@ import { Button } from "../UI/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../UI/card";
 import "../../styles/itemManagementCSS.css";
 
-const LostItems = () => {
+const FoundItems = () => {
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState({
     itemName: "",
@@ -43,8 +43,8 @@ const LostItems = () => {
       <form onSubmit={handleSubmit}>
         <div className="space-y-12">
           <div className="border-b border-gray-900/10 pb-12">
-            <h2 className="text-base font-semibold leading-7 text-gray-900">Report Lost Item</h2>
-            <p className="mt-1 text-sm leading-6 text-gray-600">Please provide accurate information about the lost item.</p>
+            <h2 className="text-base font-semibold leading-7 text-gray-900">Report Found Item</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-600">Please provide accurate information about the Found Item.</p>
 
             <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
               <div className="sm:col-span-3">
@@ -157,4 +157,4 @@ const LostItems = () => {
   );
 };
 
-export default LostItems;
+export default FoundItems;
