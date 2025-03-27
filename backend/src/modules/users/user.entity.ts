@@ -1,6 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, BeforeInsert, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Product } from '../product/product.entity';
-import * as bcrypt from 'bcryptjs';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Message } from '../messages/message.entity';
 import { FoundItem } from '../found-items/founditems.entity';
 
@@ -8,9 +6,6 @@ import { FoundItem } from '../found-items/founditems.entity';
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column()
-  name: string;
 
   @Column({ unique: true })
   email: string;
@@ -23,14 +18,6 @@ export class User {
 
   @Column()
   lastName: string;
-
-  @BeforeInsert()
-  async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
-
-  @OneToMany(() => Product, (product) => product.user)
-  products: Product[];
 
   @OneToMany(() => Message, message => message.sender)
   sentMessages: Message[];
@@ -46,4 +33,4 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
-}
+} 
