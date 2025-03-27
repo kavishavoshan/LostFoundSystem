@@ -5,7 +5,7 @@ const Footer = ({ companyName = "Lost & Found System" }) => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="absolute bottom-0 w-full py-4 text-center text-gray-400 bg-slate-800">
+    <footer className="absolute bottom-0 w-full py-4 text-center text-gray-400 bg-darkBlue">
       <div className="container px-4 mx-auto flex flex-col md:flex-row items-center justify-between">
         <div className="flex items-center space-x-6">
           <img src={logo} alt="Company Logo" className="w-auto h-11" />

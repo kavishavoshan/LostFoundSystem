@@ -50,40 +50,38 @@ const Header = () => {
         <div className="hidden lg:flex lg:gap-x-12">
           <a
             href="#"
-            className="text-lg font-semibold text-gray-300 hover:text-white"
+            className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
-            {" "}
-            {/* Adjusted desktop menu text color */}
             Home
           </a>
           <a
             href="#"
-            className="text-lg font-semibold text-gray-300 hover:text-white"
+            className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             Lost & Found
           </a>
           <a
             href="#"
-            className="text-lg font-semibold text-gray-300 hover:text-white"
+            className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             Browse Items
           </a>
           <a
             href="#"
-            className="text-lg font-semibold text-gray-300 hover:text-white"
+            className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             About Us
           </a>
           <a
             href="#"
-            className="text-lg font-semibold text-gray-300 hover:text-white"
+            className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             Contact Us
           </a>
         </div>
+
         <div className="hidden lg:flex lg:flex-1 lg:justify-end items-center space-x-6">
           {/* Logo */}
-          
 
           {/* Notification Icon */}
           <button className="relative">
@@ -91,10 +89,13 @@ const Header = () => {
             {/* Notification Dot */}
             <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
-          <img src="../../images/profile.jpg" alt="Logo" className="h-8 w-auto" />
+          <img
+            src="../../images/profile.jpg"
+            alt="Logo"
+            className="h-8 w-auto"
+          />
         </div>
       </nav>
-      
     </header>
   );
 };
