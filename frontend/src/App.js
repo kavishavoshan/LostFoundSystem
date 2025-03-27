@@ -4,14 +4,19 @@ import Home from "./pages/Home";
 
 //User
 import UserTable from "./pages/user/UserTable";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Login from "./pages/user/Login";
+import Register from "./pages/user/Register";
+import UserProfile from "./pages/user/Profile";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+
+//Footer
 import Footer from "./components/UI/Footer";
 
 //ItemManagement
 import ItemDashboard from './pages/itemManagement/dashboard'
+//Admin
+import AdminLogin from "./pages/admin/AdminLogin";
 
 function App() {
   return (
@@ -25,6 +30,9 @@ function App() {
 
         {/* ItemManagement */}
         <Route path="/itemDashboard" element={<ItemDashboard/>}/>
+        <Route path="/user" element={<UserTable />} />
+        <Route path="/adminlogin" element={<AdminLogin />} />
+        <Route path="/userprofile" element={<UserProfile />} />
       </Routes>
       {/* <Footer /> */}
     </>
