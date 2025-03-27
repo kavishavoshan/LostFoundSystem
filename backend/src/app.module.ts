@@ -10,6 +10,10 @@ import { ProductModule } from './modules/product/product.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LostItem } from './modules/lost-items/lostitems.entity';
 import { LostItemModule } from './modules/lost-items/lostitems.module';
+import { Message } from './modules/messages/message.entity';
+import { MessagesModule } from './modules/messages/messages.module';
+import { FoundItem } from './modules/found-items/found-items.entity';
+import { FoundItemModule } from './modules/found-items/found-items.module';
 
 @Module({
   imports: [
@@ -23,13 +27,15 @@ import { LostItemModule } from './modules/lost-items/lostitems.module';
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true, // Creates the database and tables automatically
-      entities: [User, Product, LostItem],
+      entities: [User, Product, LostItem, Message, FoundItem],
     }),
     TypeOrmModule.forFeature([User, LostItem]),
     UserModule,
     ProductModule,
     AuthModule,
     LostItemModule,
+    MessagesModule,
+    FoundItemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
