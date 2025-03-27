@@ -1,5 +1,4 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 import Messaging from './pages/Messaging';
 import Analytics from './pages/Analytics';
 import Main from "./pages/main/main";
@@ -16,6 +15,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 //Footer
 import Footer from "./components/UI/Footer";
 
+//ItemManagement
+import ItemDashboard from './pages/itemManagement/dashboard'
 //Admin
 import AdminLogin from "./pages/admin/AdminLogin";
 
@@ -23,17 +24,21 @@ function App() {
   return (
     <>
       <Routes>
+        <Route path="/" element={<Main />} />
         <Route path="/messages" element={<Messaging />} />
         <Route path="/analytics" element={<Analytics />} />
-        <Route path="/" element={<Main />} />
         <Route path="/home" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/user" element={<UserTable/>}/>
+
+        {/* ItemManagement */}
+        <Route path="/itemDashboard" element={<ItemDashboard/>}/>
         <Route path="/user" element={<UserTable />} />
         <Route path="/adminlogin" element={<AdminLogin />} />
         <Route path="/userprofile" element={<UserProfile />} />
       </Routes>
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 }
