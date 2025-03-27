@@ -12,8 +12,8 @@ import { LostItem } from './modules/lost-items/lostitems.entity';
 import { LostItemModule } from './modules/lost-items/lostitems.module';
 import { Message } from './modules/messages/message.entity';
 import { MessagesModule } from './modules/messages/messages.module';
-import { FoundItem } from './modules/found-items/founditems.entity';
-import { FoundItemModule } from './modules/found-items/founditems.module';
+import { FoundItem } from './modules/found-items/found-items.entity';
+import { FoundItemModule } from './modules/found-items/found-items.module';
 
 @Module({
   imports: [

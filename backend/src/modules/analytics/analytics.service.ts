@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LostItem } from '../lost-items/lostitems.entity';
-import { FoundItem } from '../found-items/founditems.entity';
+import { FoundItem } from '../found-items/found-items.entity';
 
 @Injectable()
 export class AnalyticsService {
