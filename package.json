@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@material-tailwind/react": "^2.1.10",
     "@nestjs/platform-socket.io": "^11.0.12",
     "@nestjs/websockets": "^11.0.12",
     "chart.js": "^4.4.8",
