@@ -15,4 +15,7 @@ export class GetLostItemDto {
 
   @IsString()
   contactNumber: string;
+
+  @IsString()
+  description: string;
 }
