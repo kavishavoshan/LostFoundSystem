@@ -4,6 +4,7 @@ import { Input } from "../UI/input";
 import { Button } from "../UI/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../UI/card";
 import "../../styles/itemManagementCSS.css";
+import { Description } from "@headlessui/react";
 
 const FoundItems = () => {
   const [items, setItems] = useState([]);
@@ -12,6 +13,7 @@ const FoundItems = () => {
     imageUrl: "",
     foundLocation: "",
     contactNumber: "",
+    Description: "",
   });
 
   useEffect(() => {
@@ -39,7 +41,7 @@ const FoundItems = () => {
   };
 
   return (
-    <div className="h-screen overflow-y-auto bg-gray-50 px-4 py-30">
+    <div className="h-screen overflow-y-auto bg-gray-50 px-4 py-35">
       <form onSubmit={handleSubmit}>
         <div className="space-y-12">
           <div className="border-b border-gray-900/10 pb-12">
@@ -135,6 +137,23 @@ const FoundItems = () => {
                     </div>
                     <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                   </div>
+                </div>
+              </div>
+              <div className="sm:col-span-6">
+                <label htmlFor="description" className="block text-sm font-medium leading-6 text-gray-900">
+                  Description
+                </label>
+                <div className="mt-2">
+                  <textarea
+                    name="description"
+                    id="description"
+                    value={newItem.description}
+                    onChange={handleChange}
+                    rows={4}
+                    required
+                    placeholder="E.g. Black backpack with red zipper"
+                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
+                  />
                 </div>
               </div>
             </div>
