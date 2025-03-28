@@ -5,7 +5,7 @@ import Main from "./pages/main/main";
 import Home from "./pages/Home";
 
 //User
-import UserTable from "./pages/user/UserTable";
+
 import Login from "./pages/user/Login";
 import Register from "./pages/user/Register";
 import UserProfile from "./pages/user/Profile";
@@ -16,6 +16,7 @@ import UserProfile from "./pages/user/Profile";
 import ItemDashboard from './pages/itemManagement/dashboard'
 //Admin
 import AdminLogin from "./pages/admin/AdminLogin";
+import UserTable from "./pages/admin/UserTable";
 
 //Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,7 +40,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/user" element={<UserTable/>}/>
+       
 
         {/* ItemManagement */}
         <Route path="/itemDashboard" element={<ItemDashboard/>}/>
