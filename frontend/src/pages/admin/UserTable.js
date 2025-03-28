@@ -1,8 +1,15 @@
+import { useState} from "react";
+
 import {
   MagnifyingGlassIcon,
   ChevronUpDownIcon,
 } from "@heroicons/react/24/outline";
-import { PencilIcon, UserPlusIcon, TrashIcon } from "@heroicons/react/24/solid";
+import {
+  PencilIcon,
+  UserPlusIcon,
+  TrashIcon,
+  ChatBubbleBottomCenterIcon,
+} from "@heroicons/react/24/solid";
 
 const TABS = [
   {
@@ -11,23 +18,29 @@ const TABS = [
   },
   {
     label: "Lost",
-    value: "monitored",
+    value: "lost",  // Changed from "monitored" to match filter logic
   },
   {
     label: "Found",
-    value: "unmonitored",
+    value: "found",  // Changed from "unmonitored" to match filter logic
   },
 ];
 
-const TABLE_HEAD = ["Member", "Place", "Status", "Register Date", "Action"];
+const TABLE_HEAD = [
+  "Member",
+  "Place & Item",
+  "Status",
+  "Register Date",
+  "Action",
+];
 
 const TABLE_ROWS = [
   {
     img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-3.jpg",
     name: "Thinal Dilmith",
     email: "thinaldilmith2002@gmail.com",
-    job: "Manager",
-    org: "Organization",
+    job: "Malabe",
+    org: "Bag",
     online: true,
     date: "23/04/25",
   },
@@ -35,8 +48,8 @@ const TABLE_ROWS = [
     img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-2.jpg",
     name: "Minuk Weerakon",
     email: "minukweerakon@gmail.com",
-    job: "Programator",
-    org: "Developer",
+    job: "Yakkala",
+    org: "Phone",
     online: true,
     date: "23/04/25",
   },
@@ -44,8 +57,8 @@ const TABLE_ROWS = [
     img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-1.jpg",
     name: "Kumesha Wijesandura",
     email: "kumeshawijesundara@gmail.com",
-    job: "Executive",
-    org: "Projects",
+    job: "Maradana",
+    org: "Laptop",
     online: false,
     date: "19/09/25",
   },
@@ -53,8 +66,8 @@ const TABLE_ROWS = [
     img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-4.jpg",
     name: "kavisha Voshan",
     email: "kavishkavoshan@gmail.com",
-    job: "Programator",
-    org: "Developer",
+    job: "Mount Lavinia",
+    org: "Hand Bag",
     online: true,
     date: "24/12/24",
   },
@@ -62,32 +75,52 @@ const TABLE_ROWS = [
     img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-5.jpg",
     name: "Tharindu Lakshan",
     email: "tharindulakshan@gmail.com",
-    job: "Manager",
-    org: "Executive",
+    job: "Kandy",
+    org: "Headset",
     online: false,
     date: "04/10/24",
   },
 ];
 
 function UserTable() {
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredRows = TABLE_ROWS.filter((row) => {
+    // Filter by tab selection
+    if (activeTab === "lost") return !row.online;
+    if (activeTab === "found") return row.online;
+    
+    // Filter by search term if not empty
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        row.name.toLowerCase().includes(searchLower) ||
+        row.email.toLowerCase().includes(searchLower) ||
+        row.job.toLowerCase().includes(searchLower) ||
+        row.org.toLowerCase().includes(searchLower) ||
+        row.date.includes(searchTerm)
+      );
+    }
+    
+    return true;
+  });
+
   return (
     <div className="h-full w-full bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
       {/* Card Header */}
       <div className="px-6 py-4">
         <div className="mb-8 flex items-center justify-between gap-8">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Members list</h2>
+            <h2 className="text-xl font-bold text-gray-800">Lost & Found Items</h2>
             <p className="mt-1 text-gray-600">
-              See information about all members
+              Track lost and found items in your community
             </p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-            <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-              view all
-            </button>
-            <button className="flex items-center gap-2 px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+            <button className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
               <UserPlusIcon className="h-4 w-4" />
-              Add member
+              Add New Item
             </button>
           </div>
         </div>
@@ -97,8 +130,9 @@ function UserTable() {
               {TABS.map(({ label, value }) => (
                 <button
                   key={value}
+                  onClick={() => setActiveTab(value)}
                   className={`px-4 py-2 text-sm font-medium ${
-                    value === "all"
+                    activeTab === value
                       ? "bg-blue-100 text-blue-700"
                       : "hover:bg-gray-100"
                   }`}
@@ -111,8 +145,10 @@ function UserTable() {
           <div className="w-full md:w-72 relative">
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search items..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="absolute left-3 top-2.5 text-gray-400">
               <MagnifyingGlassIcon className="h-5 w-5" />
@@ -142,69 +178,86 @@ function UserTable() {
             </tr>
           </thead>
           <tbody>
-            {TABLE_ROWS.map(
-              ({ img, name, email, job, org, online, date }, index) => {
-                const isLast = index === TABLE_ROWS.length - 1;
-                const classes = isLast ? "p-4" : "p-4 border-b border-gray-200";
+            {filteredRows.length > 0 ? (
+              filteredRows.map(
+                ({ img, name, email, job, org, online, date }, index) => {
+                  const isLast = index === filteredRows.length - 1;
+                  const classes = isLast ? "p-4" : "p-4 border-b border-gray-200";
 
-                return (
-                  <tr key={name}>
-                    <td className={classes}>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={img}
-                          alt={name}
-                          className="h-10 w-10 rounded-full object-cover"
-                        />
+                  return (
+                    <tr key={`${name}-${index}`}>
+                      <td className={classes}>
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={img}
+                            alt={name}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {name}
+                            </p>
+                            <p className="text-sm text-gray-500">{email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={classes}>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {name}
+                            {job}
                           </p>
-                          <p className="text-sm text-gray-500">{email}</p>
+                          <p className="text-sm text-gray-500">{org}</p>
                         </div>
-                      </div>
-                    </td>
-                    <td className={classes}>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {job}
-                        </p>
-                        <p className="text-sm text-gray-500">{org}</p>
-                      </div>
-                    </td>
-                    <td className={classes}>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
-                          online
-                            ? "bg-primary text-white"
-                            : "bg-secondary text-white"
-                        }`}
-                      >
-                        {online ? "Lost" : "Found"}
-                      </span>
-                    </td>
-                    <td className={classes}>
-                      <p className="text-sm text-gray-900">{date}</p>
-                    </td>
-                    <td className={classes}>
-                      <div className="flex space-x-4">
-                        <button
-                          className="text-gray-400 hover:text-gray-600 transition-colors"
-                          title="Edit User"
+                      </td>
+                      <td className={classes}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            online
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
                         >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          className="text-gray-400 hover:text-gray-600 transition-colors"
-                          title="Delete User"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }
+                          {online ? "Found" : "Lost"}
+                        </span>
+                      </td>
+                      <td className={classes}>
+                        <p className="text-sm text-gray-900">{date}</p>
+                      </td>
+                      <td className={classes}>
+                        <div className="flex space-x-4">
+                         
+                            <button
+                              className="text-blue-400 hover:text-blue-600 transition-colors"
+                            >
+                              <PencilIcon className="h-5 w-5" />
+                            </button>
+                          
+                          
+                            <button
+                              className="text-green-400 hover:text-green-600 transition-colors"
+                            >
+                              <ChatBubbleBottomCenterIcon className="h-5 w-5" />
+                            </button>
+                          
+                          
+                            <button
+                              className="text-red-400 hover:text-red-600 transition-colors"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+              )
+            ) : (
+              <tr>
+                <td colSpan={TABLE_HEAD.length} className="p-8 text-center text-gray-500">
+                  No items found matching your criteria
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -212,7 +265,9 @@ function UserTable() {
 
       {/* Card Footer */}
       <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
-        <p className="text-sm text-gray-700">Page 1 of 10</p>
+        <p className="text-sm text-gray-700">
+          Showing {filteredRows.length} of {TABLE_ROWS.length} items
+        </p>
         <div className="flex gap-2">
           <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
             Previous

@@ -8,7 +8,7 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="absolute inset-x-0 top-0 z-10 bg-darkBlue">
+    <header className="z-10 bg-darkBlue">
       <nav
         className="flex items-center justify-between p-0 sm::px-2"
         aria-label="Global"

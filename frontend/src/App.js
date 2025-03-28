@@ -49,7 +49,7 @@ function App() {
         <Route path="/userprofile" element={<UserProfile />} />
       </Routes>
 
-      <Footer />
+      {location.pathname !== "/" && <Footer />}
     </>
   );
 }
