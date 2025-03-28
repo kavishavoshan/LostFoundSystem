@@ -23,6 +23,7 @@ import Header from "./components/UI/Header";
 
 import Comunity from "./pages/main/Comunity";
 import NewsSection from "./pages/main/NewsSection";
+import Feature from "././pages/main/Feature"
 
 function App() {
   const location = useLocation();
@@ -45,6 +46,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/comunity" element={<Comunity />} />
         <Route path="/news" element={<NewsSection />} />
+        <Route path="/feature"element={<Feature/>}/>
 
         {/* ItemManagement */}
         <Route path="/itemDashboard" element={<ItemDashboard />} />
