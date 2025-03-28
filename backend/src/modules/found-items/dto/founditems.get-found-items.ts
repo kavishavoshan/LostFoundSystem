@@ -15,4 +15,7 @@ export class GetFoundItemDto {
 
   @IsString()
   contactNumber: string;
+
+  @IsString()
+  description: string;
 }

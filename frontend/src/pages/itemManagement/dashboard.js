@@ -132,26 +132,31 @@ const Dashboard = () => {
 
         {/* Lost Item Dialog */}
         <Dialog open={activeTab === "lost" && showModal} onClose={handleCloseForm} className="relative z-50">
-          <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
           <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="w-full max-w-2xl rounded bg-white p-6 shadow-lg">
-              <Dialog.Title className="text-lg font-semibold text-darkBlue mb-4">
+            <Dialog.Panel className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto transition-all duration-300">
+              <Dialog.Title className="text-xl font-bold text-darkBlue mb-4 text-center border-b pb-2">
                 Add Lost Item
               </Dialog.Title>
-              <LostItems onClose={handleCloseForm} />
+
+              <div className="space-y-4">
+                <LostItems onClose={handleCloseForm} />
+              </div>
             </Dialog.Panel>
           </div>
         </Dialog>
 
         {/* Found Item Dialog */}
         <Dialog open={activeTab === "found" && showModal} onClose={handleCloseForm} className="relative z-50">
-          <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
           <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="w-full max-w-2xl rounded bg-white p-6 shadow-lg">
-              <Dialog.Title className="text-lg font-semibold text-darkBlue mb-4">
+            <Dialog.Panel className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto transition-all duration-300">
+              <Dialog.Title className="text-xl font-bold text-darkBlue mb-4 text-center border-b pb-2">
                 Add Found Item
               </Dialog.Title>
-              <FoundItems onClose={handleCloseForm} />
+              <div className="space-y-4">
+                <FoundItems onClose={handleCloseForm} />
+              </div>
             </Dialog.Panel>
           </div>
         </Dialog>
