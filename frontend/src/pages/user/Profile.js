@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import profile from "../../images/profile.jpg"
 
 function Profile() {
   // Image states
@@ -135,7 +136,7 @@ function Profile() {
             <div className="flex flex-col items-center w-full md:w-auto -mt-20">
               <div className="relative group">
                 <img
-                  src={avatarImage}
+                  src={profile}
                   className="w-40 h-40 rounded-full border-4 border-white shadow-md object-cover"
                 />
                 <button
@@ -163,7 +164,7 @@ function Profile() {
                 <h1 className="text-3xl font-bold text-gray-800">
                   Thinal Dilmith
                 </h1>
-                <p className="text-lg text-gray-600 mt-1">Software Engineer</p>
+                <p className="text-lg text-gray-600 mt-1">thinaldilmith2002@gmail.com</p>
               </div>
             </div>
 
