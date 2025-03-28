@@ -18,6 +18,9 @@ export class FoundItem {
   @Column()
   contactNumber: string;
 
+  @Column()
+  description: string;
+
   @ManyToOne(() => User, (user) => user.foundItems, { onDelete: 'CASCADE' })
   finder: User;
 }
