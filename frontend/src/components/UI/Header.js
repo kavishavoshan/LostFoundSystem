@@ -49,7 +49,7 @@ const Header = () => {
         </div>
         <div className="hidden lg:flex lg:gap-x-12">
           <a
-            href="#"
+            href="/home"
             className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             Home

@@ -19,7 +19,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import UserTable from "./pages/admin/UserTable";
 
 //Components
-import ProtectedRoute from "./components/ProtectedRoute";
+// import ProtectedRoute from "./components/ProtectedRoute";
 import Footer from "./components/UI/Footer";
 import Header from "./components/UI/Header";
 
