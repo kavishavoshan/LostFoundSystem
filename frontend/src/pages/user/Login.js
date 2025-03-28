@@ -19,7 +19,7 @@ const Login = () => {
     try {
       const data = await login(formData.email, formData.password);
       // setUser({ token: data.accessToken });
-      navigate("/");
+      navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
       setError("Login failed. Please try again.");
