@@ -15,7 +15,7 @@ const Header = () => {
         aria-label="Global"
       >
         <div className="flex sm:flex-1">
-          <a href="#" className="-m-1.5 p-1.5">
+          <a href="/home" className="-m-1.5 p-1.5">
             <span className="sr-only">Your Company</span>
             <img
               className="w-auto h-24"
