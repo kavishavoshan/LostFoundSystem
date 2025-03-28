@@ -70,7 +70,7 @@ const NewspaperSection = () => {
   return (
     <div className="text-white bg-darkBlue min-h-screen">
       {/* Fixed Header */}
-      <header className="fixed inset-x-0 top-0 z-50 bg-gray-900 bg-opacity-90 backdrop-blur-sm">
+      <header className="fixed inset-x-0 top-0 z-50 bg-darkBlue bg-opacity-90 backdrop-blur-sm">
         <nav
           className="flex items-center justify-between p-2 lg:px-5"
           aria-label="Global"
