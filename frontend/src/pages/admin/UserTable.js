@@ -45,7 +45,7 @@ const TABLE_ROWS = [
     date: "23/04/25",
   },
   {
-    img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-2.jpg",
+    img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-6.jpg",
     name: "Minuk Weerakon",
     email: "minukweerakon@gmail.com",
     job: "Yakkala",
@@ -55,8 +55,8 @@ const TABLE_ROWS = [
   },
   {
     img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-1.jpg",
-    name: "Kumesha Wijesandura",
-    email: "kumeshawijesundara@gmail.com",
+    name: "Kaveesha sooriyaarachchi",
+    email: "kaveeshasooriyaarachchi@gmail.com",
     job: "Maradana",
     org: "Laptop",
     online: false,
@@ -73,8 +73,8 @@ const TABLE_ROWS = [
   },
   {
     img: "https://demos.creative-tim.com/test/corporate-ui-dashboard/assets/img/team-5.jpg",
-    name: "Tharindu Lakshan",
-    email: "tharindulakshan@gmail.com",
+    name: "Kumesha Wijesandura",
+    email: "kumeshawijesundara@gmail.com",
     job: "Kandy",
     org: "Headset",
     online: false,
@@ -112,7 +112,7 @@ function UserTable() {
       <div className="px-6 py-4">
         <div className="mb-8 flex items-center justify-between gap-8">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Lost & Found Items</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Lost & Found Items</h2>
             <p className="mt-1 text-gray-600">
               Track lost and found items in your community
             </p>
@@ -120,7 +120,7 @@ function UserTable() {
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
             <button className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
               <UserPlusIcon className="h-4 w-4" />
-              Add New Item
+              Add User
             </button>
           </div>
         </div>
@@ -145,7 +145,7 @@ function UserTable() {
           <div className="w-full md:w-72 relative">
             <input
               type="text"
-              placeholder="Search items..."
+              placeholder="Search....."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

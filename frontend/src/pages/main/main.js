@@ -49,29 +49,22 @@ function Main() {
               </svg>
             </button>
           </div>
-          <div className="hidden lg:flex lg:gap-x-12">
+          <div className="hidden lg:flex lg:gap-x-28">
+            
             <a
-              href="#"
-              className="text-lg font-semibold text-gray-300 hover:text-white"
-            >
-              {" "}
-              {/* Adjusted desktop menu text color */}
-              Item
-            </a>
-            <a
-              href="#"
+              href=""
               className="text-lg font-semibold text-gray-300 hover:text-white"
             >
               Features
             </a>
             <a
-              href="#"
+              href="/comunity"
               className="text-lg font-semibold text-gray-300 hover:text-white"
             >
               Community
             </a>
             <a
-              href="#"
+              href="/news"
               className="text-lg font-semibold text-gray-300 hover:text-white"
             >
               News
