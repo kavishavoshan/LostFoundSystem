@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { register } from "../../api/auth";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/UI/Footer";
 import Swal from "sweetalert2";
@@ -60,7 +59,6 @@ const Register = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Validate field on change but only if it's been touched or has an error
     if (errors[name]) {
       setErrors({ ...errors, [name]: validateField(name, value) });
     }
@@ -100,37 +98,29 @@ const Register = () => {
     setIsSubmitting(true);
 
     try {
-      await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      });
-
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       await Swal.fire({
-        title: "Success!",
-        text: "Registration successful! Redirecting to login...",
+        title: "Registration Successful!",
+        text: "Your account has been created successfully (demo).",
         icon: "success",
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true,
       });
 
-      navigate("/login");
+      // Reset form after successful submission
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
     } catch (err) {
-      console.error("Registration error:", err);
-      
-      let errorMessage = "Registration failed. Please try again.";
-      if (err.response) {
-        if (err.response.status === 409) {
-          errorMessage = "Email already exists. Please use a different email.";
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
-        }
-      }
-
       await Swal.fire({
-        title: "Registration Error",
-        text: errorMessage,
+        title: "Error",
+        text: "An unexpected error occurred.",
         icon: "error",
         confirmButtonText: "OK",
       });
