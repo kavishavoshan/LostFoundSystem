@@ -74,7 +74,7 @@ const AdminLogin = () => {
           timer: 1500,
           showConfirmButton: false,
         }).then(() => {
-          navigate("/admin/dashboard");
+          navigate("/user");
         });
       } else {
         throw new Error("Invalid credentials");
