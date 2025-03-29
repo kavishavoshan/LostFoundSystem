@@ -16,4 +16,7 @@ export class LostItem {
 
   @Column()
   contactNumber: string;
+
+  @Column()
+  description: string;
 }

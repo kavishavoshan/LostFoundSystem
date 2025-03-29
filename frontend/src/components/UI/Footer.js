@@ -1,14 +1,14 @@
 import React from "react";
 import logo from "../../images/image.jpg"; // Ensure the path is correct
 
-const Footer = ({ companyName = "Lost & Found System" }) => {
+const Footer = ({ companyName = "Reclaim" }) => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="absolute bottom-0 w-full py-4 text-center text-gray-400 bg-slate-800">
+    <footer className="flex fixed bottom-0 w-full py-0 text-center text-gray-400 bg-darkBlue">
       <div className="container px-4 mx-auto flex flex-col md:flex-row items-center justify-between">
         <div className="flex items-center space-x-6">
-          <img src={logo} alt="Company Logo" className="w-12 h-12" />
+          <img src={logo} alt="Company Logo" className="w-auto h-11" />
           <small>
             &copy; {currentYear} {companyName}. All rights reserved.
           </small>
