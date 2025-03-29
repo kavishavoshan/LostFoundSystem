@@ -4,7 +4,6 @@ import Analytics from "./pages/Analytics";
 import Main from "./pages/main/main";
 import Home from "./pages/Home";
 
-
 //User
 
 import Login from "./pages/user/Login";
@@ -22,8 +21,9 @@ import UserTable from "./pages/admin/UserTable";
 import Footer from "./components/UI/Footer";
 import Header from "./components/UI/Header";
 
-import Comunity from"./pages/main/Comunity";
-import NewsSection from "./pages/main/NewsSection"
+import Comunity from "./pages/main/Comunity";
+import NewsSection from "./pages/main/NewsSection";
+import Feature from "././pages/main/Feature"
 
 function App() {
   const location = useLocation();
@@ -31,7 +31,9 @@ function App() {
   return (
     <>
       {/* Hide header only on main page */}
-      {location.pathname !== "/" && location.pathname !== "/comunity" && location.pathname !== "/news" ? (
+      {location.pathname !== "/" &&
+      location.pathname !== "/comunity" &&
+      location.pathname !== "/news" ? (
         <Header />
       ) : null}
 
@@ -43,7 +45,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/comunity" element={<Comunity />} />
-        <Route path="/news" element={<NewsSection/>}/>
+        <Route path="/news" element={<NewsSection />} />
+        <Route path="/feature"element={<Feature/>}/>
 
         {/* ItemManagement */}
         <Route path="/itemDashboard" element={<ItemDashboard />} />
