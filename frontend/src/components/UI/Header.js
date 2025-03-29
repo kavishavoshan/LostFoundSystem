@@ -62,7 +62,7 @@ const Header = () => {
             Lost & Found
           </a>
           <a
-            href="#"
+            href="/feature"
             className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             Browse Items
