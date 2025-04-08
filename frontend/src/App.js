@@ -23,7 +23,7 @@ import Header from "./components/UI/Header";
 
 import Comunity from "./pages/main/Comunity";
 import NewsSection from "./pages/main/NewsSection";
-import Feature from "././pages/main/Feature"
+import Feature from "././pages/main/feature"
 
 function App() {
   const location = useLocation();

@@ -60,6 +60,7 @@ const FoundItems = () => {
                     id="itemName"
                     value={newItem.itemName}
                     onChange={handleChange}
+                    placeholder="E.g. Black wallet"
                     required
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
@@ -77,6 +78,7 @@ const FoundItems = () => {
                     id="foundLocation"
                     value={newItem.foundLocation}
                     onChange={handleChange}
+                    placeholder="E.g. SLIIT UNI, Malabe"
                     required
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
@@ -94,6 +96,7 @@ const FoundItems = () => {
                     id="contactNumber"
                     value={newItem.contactNumber}
                     onChange={handleChange}
+                    placeholder="E.g. 0777788899"
                     required
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
