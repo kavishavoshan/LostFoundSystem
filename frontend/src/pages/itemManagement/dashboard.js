@@ -5,26 +5,82 @@ import { Dialog } from "@headlessui/react";
 import { Bar } from "react-chartjs-2";
 import "../../chartConfig";
 import SimpleDataGrid from "../../components/itemManagement/SimpleDataGrid";
-import { getLostItems } from '../../api/lostItems';
-import { getFoundItems } from '../../api/foundItems';
+import { getLostItems, deleteLostItem } from '../../api/lostItems';
+import { getFoundItems, deleteFoundItem } from '../../api/foundItems';
 import { exportToExcel, exportToCSV, exportToPDF } from "../../utils/exportUtils.ts";
-
-const columns = [
-  { field: "id", headerName: "ID", width: 70 },
-  { field: "itemName", headerName: "Item Name", flex: 1 },
-  { field: "location", headerName: "Lost At", flex: 1 },
-  { field: "contact", headerName: "Contact", flex: 1 },
-  { field: "action", headerName: "Actions", flex: 1 }
-];
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("lost");
   const [showModal, setShowModal] = useState(false);
   const [lostItemRows, setLostItemRows] = useState([]);
   const [foundItemRows, setFoundItemRows] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const handleOpenForm = () => setShowModal(true);
   const handleCloseForm = () => setShowModal(false);
+
+  const handleDelete = (item) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    if (activeTab === "lost") {
+      await deleteLostItem(itemToDelete.id);
+      const updatedRows = lostItemRows.filter(item => item.id !== itemToDelete.id);
+      setLostItemRows(updatedRows);
+    } else {
+      await deleteFoundItem(itemToDelete.id);
+      const updatedRows = foundItemRows.filter(item => item.id !== itemToDelete.id);
+      setFoundItemRows(updatedRows);
+    }
+
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+  };
+
+  const columns = [
+    { field: "id", headerName: "ID", width: 70 },
+    { field: "itemName", headerName: "Item Name", flex: 1 },
+    { field: "location", headerName: "Lost At", flex: 1 },
+    { field: "contact", headerName: "Contact", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleEdit(params.row)}
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            ✏️ Edit
+          </button>
+          <button
+            onClick={() => handleDelete(params.row)}
+            className="text-red-600 hover:text-red-800 font-medium"
+          >
+            🗑️ Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const handleEdit = (item) => {
+    setActiveTab(item.location ? "lost" : "found");
+    setShowModal(true);
+    // Optionally: setEditingItem(item);
+  };
 
   useEffect(() => {
     async function fetchLostItems() {
@@ -34,7 +90,6 @@ const Dashboard = () => {
         itemName: item.itemName,
         location: item.lostLocation,
         contact: item.contactNumber,
-        "actions": "edit"
       }));
       setLostItemRows(formattedRows);
     }
@@ -121,7 +176,6 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* Data Grid */}
           {activeTab === "lost" ? (
             <SimpleDataGrid title="Lost Items" rows={lostItemRows} columns={columns} />
           ) : (
@@ -137,7 +191,6 @@ const Dashboard = () => {
               <Dialog.Title className="text-xl font-bold text-darkBlue mb-4 text-center border-b pb-2">
                 Add Lost Item
               </Dialog.Title>
-
               <div className="space-y-4">
                 <LostItems onClose={handleCloseForm} />
               </div>
@@ -159,48 +212,78 @@ const Dashboard = () => {
             </Dialog.Panel>
           </div>
         </Dialog>
-      </div>
-      <div className="bg-white rounded-xl p-6 shadow w-full md:w-2/3 mx-auto text-center mt-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center justify-center gap-2">
-          📄 Generate {activeTab === "lost" ? "Lost" : "Found"} Item Report
-        </h3>
 
-        <div className="flex justify-center gap-4 flex-wrap">
-          <button
-            onClick={() =>
-              exportToExcel(
-                activeTab === "lost" ? lostItemRows : foundItemRows,
-                activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
-              )
-            }
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow"
-          >
-            📊 Export to Excel
-          </button>
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteModal} onClose={cancelDelete} className="relative z-50">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+              <Dialog.Title className="text-xl font-semibold text-red-600 mb-4 text-center border-b pb-2">
+                ⚠️ Confirm Delete
+              </Dialog.Title>
+              <div className="text-center text-gray-700 mb-6">
+                Are you sure you want to delete <strong>{itemToDelete?.itemName}</strong>?
+                <br />
+                This action cannot be undone.
+              </div>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={confirmDelete}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={cancelDelete}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg"
+                >
+                  Cancel
+                </button>
+              </div>
+            </Dialog.Panel>
+          </div>
+        </Dialog>
 
-          <button
-            onClick={() =>
-              exportToCSV(
-                activeTab === "lost" ? lostItemRows : foundItemRows,
-                activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
-              )
-            }
-            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow"
-          >
-            📁 Export to CSV
-          </button>
-
-          <button
-            onClick={() =>
-              exportToPDF(
-                activeTab === "lost" ? lostItemRows : foundItemRows,
-                activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
-              )
-            }
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow"
-          >
-            🧾 Export to PDF
-          </button>
+        {/* Export Section */}
+        <div className="bg-white rounded-xl p-6 shadow w-full md:w-2/3 mx-auto text-center mt-6">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center justify-center gap-2">
+            📄 Generate {activeTab === "lost" ? "Lost" : "Found"} Item Report
+          </h3>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <button
+              onClick={() =>
+                exportToExcel(
+                  activeTab === "lost" ? lostItemRows : foundItemRows,
+                  activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
+                )
+              }
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow"
+            >
+              📊 Export to Excel
+            </button>
+            <button
+              onClick={() =>
+                exportToCSV(
+                  activeTab === "lost" ? lostItemRows : foundItemRows,
+                  activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
+                )
+              }
+              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow"
+            >
+              📁 Export to CSV
+            </button>
+            <button
+              onClick={() =>
+                exportToPDF(
+                  activeTab === "lost" ? lostItemRows : foundItemRows,
+                  activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
+                )
+              }
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow"
+            >
+              🧾 Export to PDF
+            </button>
+          </div>
         </div>
       </div>
     </div>
