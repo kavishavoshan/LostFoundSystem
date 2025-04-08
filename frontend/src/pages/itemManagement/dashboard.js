@@ -7,13 +7,14 @@ import "../../chartConfig";
 import SimpleDataGrid from "../../components/itemManagement/SimpleDataGrid";
 import { getLostItems } from '../../api/lostItems';
 import { getFoundItems } from '../../api/foundItems';
+import { exportToExcel, exportToCSV, exportToPDF } from "../../utils/exportUtils.ts";
 
 const columns = [
   { field: "id", headerName: "ID", width: 70 },
   { field: "itemName", headerName: "Item Name", flex: 1 },
   { field: "location", headerName: "Lost At", flex: 1 },
   { field: "contact", headerName: "Contact", flex: 1 },
-  { field: "action", headerName: "Actions", flex:1 }
+  { field: "action", headerName: "Actions", flex: 1 }
 ];
 
 const Dashboard = () => {
@@ -102,21 +103,19 @@ const Dashboard = () => {
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActiveTab("lost")}
-              className={`w-1/2 py-3 text-center text-lg font-medium ${
-                activeTab === "lost"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray-500"
-              }`}
+              className={`w-1/2 py-3 text-center text-lg font-medium ${activeTab === "lost"
+                ? "text-primary border-b-2 border-primary"
+                : "text-gray-500"
+                }`}
             >
               Lost Items
             </button>
             <button
               onClick={() => setActiveTab("found")}
-              className={`w-1/2 py-3 text-center text-lg font-medium ${
-                activeTab === "found"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray-500"
-              }`}
+              className={`w-1/2 py-3 text-center text-lg font-medium ${activeTab === "found"
+                ? "text-primary border-b-2 border-primary"
+                : "text-gray-500"
+                }`}
             >
               Found Items
             </button>
@@ -160,6 +159,49 @@ const Dashboard = () => {
             </Dialog.Panel>
           </div>
         </Dialog>
+      </div>
+      <div className="bg-white rounded-xl p-6 shadow w-full md:w-2/3 mx-auto text-center mt-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center justify-center gap-2">
+          📄 Generate {activeTab === "lost" ? "Lost" : "Found"} Item Report
+        </h3>
+
+        <div className="flex justify-center gap-4 flex-wrap">
+          <button
+            onClick={() =>
+              exportToExcel(
+                activeTab === "lost" ? lostItemRows : foundItemRows,
+                activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
+              )
+            }
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow"
+          >
+            📊 Export to Excel
+          </button>
+
+          <button
+            onClick={() =>
+              exportToCSV(
+                activeTab === "lost" ? lostItemRows : foundItemRows,
+                activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
+              )
+            }
+            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow"
+          >
+            📁 Export to CSV
+          </button>
+
+          <button
+            onClick={() =>
+              exportToPDF(
+                activeTab === "lost" ? lostItemRows : foundItemRows,
+                activeTab === "lost" ? "LostItemsReport" : "FoundItemsReport"
+              )
+            }
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow"
+          >
+            🧾 Export to PDF
+          </button>
+        </div>
       </div>
     </div>
   );
