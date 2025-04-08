@@ -12,4 +12,7 @@ export class CreateFoundItemDto {
 
   @IsString()
   contactNumber: string;
+
+  @IsString()
+  description: string;
 }

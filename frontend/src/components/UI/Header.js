@@ -1,20 +1,21 @@
-// src/components/Header.jsx
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import logo from "../../images/image.jpg"; // Import the logo
-import Profile from "../../pages/user/Profile";
+import Profile from "../../images/profile.jpg";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <header className="absolute inset-x-0 top-0 z-10 bg-darkBlue">
+    <header className="z-10 bg-darkBlue">
       <nav
         className="flex items-center justify-between p-0 sm::px-2"
         aria-label="Global"
       >
         <div className="flex sm:flex-1">
-          <a href="#" className="-m-1.5 p-1.5">
+          <a href="/home" className="-m-1.5 p-1.5">
             <span className="sr-only">Your Company</span>
             <img
               className="w-auto h-24"
@@ -49,7 +50,7 @@ const Header = () => {
         </div>
         <div className="hidden lg:flex lg:gap-x-12">
           <a
-            href="#"
+            href="/home"
             className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             Home
@@ -61,7 +62,7 @@ const Header = () => {
             Lost & Found
           </a>
           <a
-            href="#"
+            href="/feature"
             className="text-lg font-semibold text-gray-300 hover:text-white hover:underline hover:decoration-orange-500"
           >
             Browse Items
@@ -81,19 +82,20 @@ const Header = () => {
         </div>
 
         <div className="hidden lg:flex lg:flex-1 lg:justify-end items-center space-x-6">
-          {/* Logo */}
+          
 
-          {/* Notification Icon */}
-          <button className="relative">
+          <button className="relative" onClick={() => setVisible(!visible)}>
             <i className="fas fa-bell text-gray-300 hover:text-white text-xl"></i>
-            {/* Notification Dot */}
-            <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full"></span>
+            {visible && <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>}
           </button>
           <img
-            src="../../images/profile.jpg"
+            src={Profile}
             alt="Logo"
-            className="h-8 w-auto"
+            className="h-12 w-12 rounded-full border-1 border-white shadow-md mr-4"
+            onClick={() => navigate("/userprofile")}
           />
+
+          
         </div>
       </nav>
     </header>

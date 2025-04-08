@@ -1,6 +1,7 @@
-import { Controller, Post, Get, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, Put, Delete } from '@nestjs/common';
 import { FoundItemService } from './found-items.service';
 import { CreateFoundItemDto } from './dto/founditems.create-found-items';
+import { UpdateFoundItemDto } from './dto/founditems.update-found-item';
 
 @Controller('found-items')
 export class FoundItemController {
@@ -20,4 +21,14 @@ export class FoundItemController {
   findOne(@Param('id') id: number) {
     return this.foundItemService.findOne(id);
   }
+
+    @Put('updateFoundItem/:id')
+    update(@Param('id') id: number, @Body() updateLostItemDto: UpdateFoundItemDto) {
+      return this.foundItemService.update(id, updateLostItemDto);
+    }
+  
+    @Delete('deleteLostItem/:id')
+    remove(@Param('id') id: number) {
+      return this.foundItemService.remove(id);
+    }
 }

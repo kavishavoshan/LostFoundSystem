@@ -49,29 +49,22 @@ function Main() {
               </svg>
             </button>
           </div>
-          <div className="hidden lg:flex lg:gap-x-12">
+          <div className="hidden lg:flex lg:gap-x-28">
+            
             <a
-              href="/itemDashboard"
-              className="text-lg font-semibold text-gray-300 hover:text-white"
-            >
-              {" "}
-              {/* Adjusted desktop menu text color */}
-              Item
-            </a>
-            <a
-              href="#"
+              href=""
               className="text-lg font-semibold text-gray-300 hover:text-white"
             >
               Features
             </a>
             <a
-              href="#"
+              href="/comunity"
               className="text-lg font-semibold text-gray-300 hover:text-white"
             >
               Community
             </a>
             <a
-              href="#"
+              href="/news"
               className="text-lg font-semibold text-gray-300 hover:text-white"
             >
               News
@@ -82,7 +75,7 @@ function Main() {
               onClick={() => (window.location.href = "/adminlogin")}
               className="px-4 py-2 text-sm font-semibold text-gray-300 bg-gray-700 rounded-lg hover:bg-white hover:text-gray-900 transition"
             >
-              Admin
+              Admin login
             </button>
           </div>
         </nav>
