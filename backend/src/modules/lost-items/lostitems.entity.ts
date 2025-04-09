@@ -1,22 +1,24 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
-@Entity()
+export type LostItemDocument = LostItem & Document;
+
+@Schema({ timestamps: true })
 export class LostItem {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column()
+  @Prop({ required: true })
   itemName: string;
 
-  @Column()
+  @Prop({ required: true })
   imageUrl: string;
 
-  @Column()
+  @Prop({ required: true })
   lostLocation: string;
 
-  @Column()
+  @Prop({ required: true })
   contactNumber: string;
 
-  @Column()
+  @Prop({ required: true })
   description: string;
 }
+
+export const LostItemSchema = SchemaFactory.createForClass(LostItem);

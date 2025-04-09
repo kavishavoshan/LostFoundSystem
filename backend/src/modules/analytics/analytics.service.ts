@@ -1,87 +1,98 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { LostItem } from '../lost-items/lostitems.entity';
-import { FoundItem } from '../found-items/found-items.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { LostItem, LostItemDocument } from '../lost-items/lostitems.entity';
+import { FoundItem, FoundItemDocument } from '../found-items/found-items.entity';
 
 @Injectable()
 export class AnalyticsService {
   constructor(
-    @InjectRepository(LostItem)
-    private lostItemRepository: Repository<LostItem>,
-    @InjectRepository(FoundItem)
-    private foundItemRepository: Repository<FoundItem>,
+    @InjectModel(LostItem.name) private lostItemModel: Model<LostItemDocument>,
+    @InjectModel(FoundItem.name) private foundItemModel: Model<FoundItemDocument>,
   ) {}
 
-  async getTotalItems() {
-    const [totalLost, totalFound] = await Promise.all([
-      this.lostItemRepository.count(),
-      this.foundItemRepository.count(),
+  async generateReport(): Promise<any> {
+    const [lostCount, foundCount, lostByLocation, foundByLocation] = await Promise.all([
+      this.getLostItemsCount(),
+      this.getFoundItemsCount(),
+      this.getLostItemsByLocation(),
+      this.getFoundItemsByLocation(),
     ]);
 
     return {
-      totalLost,
-      totalFound,
-      total: totalLost + totalFound,
+      totalLost: lostCount,
+      totalFound: foundCount,
+      lostByLocation,
+      foundByLocation,
+      returnRate: foundCount > 0 ? (foundCount / (lostCount + foundCount)) * 100 : 0,
     };
   }
 
-  async getCommonLostItems() {
-    return this.lostItemRepository
-      .createQueryBuilder('item')
-      .select('item.itemName', 'name')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('item.itemName')
-      .orderBy('count', 'DESC')
-      .limit(10)
-      .getRawMany();
+  async getTotalItems(): Promise<number> {
+    const [lostCount, foundCount] = await Promise.all([
+      this.getLostItemsCount(),
+      this.getFoundItemsCount(),
+    ]);
+    return lostCount + foundCount;
   }
 
-  async getFrequentLocations() {
-    return this.lostItemRepository
-      .createQueryBuilder('item')
-      .select('item.lostLocation', 'location')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('item.lostLocation')
-      .orderBy('count', 'DESC')
-      .limit(10)
-      .getRawMany();
+  async getCommonLostItems(): Promise<any[]> {
+    return this.lostItemModel.aggregate([
+      { $group: { _id: '$itemType', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 }
+    ]).exec();
   }
 
-  async getReturnRate() {
-    const [totalLost, totalFound] = await Promise.all([
-      this.lostItemRepository.count(),
-      this.foundItemRepository.count(),
+  async getFrequentLocations(): Promise<any[]> {
+    const [lostLocations, foundLocations] = await Promise.all([
+      this.getLostItemsByLocation(),
+      this.getFoundItemsByLocation(),
     ]);
 
-    const returnRate = totalLost > 0 ? (totalFound / totalLost) * 100 : 0;
+    const locationMap = new Map();
+    
+    lostLocations.forEach(({ _id, count }) => {
+      locationMap.set(_id, (locationMap.get(_id) || 0) + count);
+    });
+    
+    foundLocations.forEach(({ _id, count }) => {
+      locationMap.set(_id, (locationMap.get(_id) || 0) + count);
+    });
 
-    return {
-      returnRate: Math.round(returnRate),
-      totalLost,
-      totalFound,
-    };
+    return Array.from(locationMap.entries())
+      .map(([location, count]) => ({ location, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
   }
 
-  async generateReport() {
-    const [
-      totalItems,
-      commonItems,
-      frequentLocations,
-      returnRate,
-    ] = await Promise.all([
-      this.getTotalItems(),
-      this.getCommonLostItems(),
-      this.getFrequentLocations(),
-      this.getReturnRate(),
+  async getReturnRate(): Promise<number> {
+    const [lostCount, foundCount] = await Promise.all([
+      this.getLostItemsCount(),
+      this.getFoundItemsCount(),
     ]);
+    return lostCount > 0 ? (foundCount / lostCount) * 100 : 0;
+  }
 
-    return {
-      totalItems,
-      commonItems,
-      frequentLocations,
-      returnRate,
-      generatedAt: new Date(),
-    };
+  async getLostItemsCount(): Promise<number> {
+    return this.lostItemModel.countDocuments().exec();
+  }
+
+  async getFoundItemsCount(): Promise<number> {
+    return this.foundItemModel.countDocuments().exec();
+  }
+
+  async getLostItemsByLocation(): Promise<any[]> {
+    return this.lostItemModel.aggregate([
+      { $group: { _id: '$lostLocation', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).exec();
+  }
+
+  async getFoundItemsByLocation(): Promise<any[]> {
+    return this.foundItemModel.aggregate([
+      { $group: { _id: '$foundLocation', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).exec();
   }
 } 

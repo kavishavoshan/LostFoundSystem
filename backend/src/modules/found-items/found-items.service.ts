@@ -1,26 +1,52 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { FoundItem } from './found-items.entity';
-import { CreateFoundItemDto } from './dto/founditems.create-found-items';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { FoundItem } from './schemas/found-item.schema';
+import { CreateFoundItemDto } from './dto/create-found-item.dto';
+import { UpdateFoundItemDto } from './dto/update-found-item.dto';
 
 @Injectable()
-export class FoundItemService {
+export class FoundItemsService {
   constructor(
-    @InjectRepository(FoundItem)
-    private foundItemRepository: Repository<FoundItem>,
+    @InjectModel(FoundItem.name) private foundItemModel: Model<FoundItem>,
   ) {}
 
   async create(createFoundItemDto: CreateFoundItemDto): Promise<FoundItem> {
-    const foundItem = this.foundItemRepository.create(createFoundItemDto);
-    return this.foundItemRepository.save(foundItem);
+    const createdFoundItem = new this.foundItemModel(createFoundItemDto);
+    return createdFoundItem.save();
   }
 
   async findAll(): Promise<FoundItem[]> {
-    return this.foundItemRepository.find();
+    return this.foundItemModel.find().exec();
   }
 
-  async findOne(id: number): Promise<FoundItem | null> {
-    return this.foundItemRepository.findOneBy({ id });
+  async findOne(id: string): Promise<FoundItem> {
+    const foundItem = await this.foundItemModel.findById(id).exec();
+    if (!foundItem) {
+      throw new NotFoundException(`Found item with ID ${id} not found`);
+    }
+    return foundItem;
+  }
+
+  async findByUser(userId: string): Promise<FoundItem[]> {
+    return this.foundItemModel.find({ userId }).exec();
+  }
+
+  async update(id: string, updateFoundItemDto: UpdateFoundItemDto): Promise<FoundItem> {
+    const updatedFoundItem = await this.foundItemModel
+      .findByIdAndUpdate(id, updateFoundItemDto, { new: true })
+      .exec();
+    if (!updatedFoundItem) {
+      throw new NotFoundException(`Found item with ID ${id} not found`);
+    }
+    return updatedFoundItem;
+  }
+
+  async remove(id: string): Promise<FoundItem> {
+    const deletedFoundItem = await this.foundItemModel.findByIdAndDelete(id).exec();
+    if (!deletedFoundItem) {
+      throw new NotFoundException(`Found item with ID ${id} not found`);
+    }
+    return deletedFoundItem;
   }
 }

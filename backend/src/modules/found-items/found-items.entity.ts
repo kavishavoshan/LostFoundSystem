@@ -1,26 +1,28 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 import { User } from '../user/user.entity';
 
-@Entity()
-export class FoundItem {
-  @PrimaryGeneratedColumn()
-  id: number;
+export type FoundItemDocument = FoundItem & Document;
 
-  @Column()
+@Schema({ timestamps: true })
+export class FoundItem {
+  @Prop({ required: true })
   itemName: string;
 
-  @Column()
+  @Prop({ required: true })
   imageUrl: string;
 
-  @Column()
+  @Prop({ required: true })
   foundLocation: string;
 
-  @Column()
+  @Prop({ required: true })
   contactNumber: string;
 
-  @Column()
+  @Prop({ required: true })
   description: string;
 
-  @ManyToOne(() => User, (user) => user.foundItems, { onDelete: 'CASCADE' })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
   finder: User;
 }
+
+export const FoundItemSchema = SchemaFactory.createForClass(FoundItem);
