@@ -1,6 +1,29 @@
-/venv
-/include
-/lib
-/lib64
-/local
-pyvenv.cfg
+# Python virtual environment
+myenv/
+venv/
+env/
+.env/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Local development settings
+.env
+.env.local
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ML model files (if you want to exclude them)
+*.pth
+model/
