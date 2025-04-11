@@ -59,6 +59,7 @@ const LostItems = () => {
                     id="itemName"
                     value={newItem.itemName}
                     onChange={handleChange}
+                    placeholder="E.g. Black wallet"
                     required
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
@@ -76,6 +77,7 @@ const LostItems = () => {
                     id="lostLocation"
                     value={newItem.lostLocation}
                     onChange={handleChange}
+                    placeholder="E.g. SLIIT UNI, Malabe"
                     required
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
@@ -92,8 +94,20 @@ const LostItems = () => {
                     name="contactNumber"
                     id="contactNumber"
                     value={newItem.contactNumber}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length <= 10) {
+                        handleChange({
+                          target: {
+                            name: 'contactNumber',
+                            value,
+                          },
+                        });
+                      }
+                    }}
+                    placeholder="E.g. 0777788899"
                     required
+                    maxLength={10}
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
                 </div>

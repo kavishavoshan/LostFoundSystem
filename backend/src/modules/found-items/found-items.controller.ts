@@ -36,4 +36,14 @@ export class FoundItemsController {
   remove(@Param('id') id: string) {
     return this.foundItemsService.remove(id);
   }
+
+    // @Put('updateFoundItem/:id')
+    // update(@Param('id') id: number, @Body() updateLostItemDto: UpdateFoundItemDto) {
+    //   return this.foundItemService.update(id, updateLostItemDto);
+    // }
+  
+    // @Delete('deleteLostItem/:id')
+    // remove(@Param('id') id: number) {
+    //   return this.foundItemService.remove(id);
+    // }
 }
