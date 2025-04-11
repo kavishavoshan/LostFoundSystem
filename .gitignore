@@ -1,26 +1,29 @@
-# Python virtual environment
-myenv/
+# Virtual Environment
 venv/
+myenv/
 env/
 .env/
+.venv/
 
-# Python cache files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 
 # Distribution / packaging
 dist/
 build/
 *.egg-info/
 
-# Local development settings
-.env
-.env.local
+# PyTorch model files
+*.pth
+model/*.pth
 
-# IDE specific files
+# macOS
+.DS_Store
+
+# IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
