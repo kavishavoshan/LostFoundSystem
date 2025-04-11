@@ -4,8 +4,6 @@ myenv/
 env/
 .env/
 .venv/
-**/site-packages/
-*.dylib
 
 # Python
 __pycache__/
@@ -18,15 +16,11 @@ dist/
 build/
 *.egg-info/
 
-# ML Model files
+# Model files and directories
 *.pth
+model/
 ml-server/model/
-**/model/best_model.pth
-
-# PyTorch files
-**/torch/
-**/torch_cpu.dylib
-**/libtorch_cpu.dylib
+backend/src/modules/best_model.pth
 
 # macOS
 .DS_Store
@@ -34,4 +28,7 @@ ml-server/model/
 # IDE
 .vscode/
 .idea/
+
+# Dependencies
+node_modules/
 
