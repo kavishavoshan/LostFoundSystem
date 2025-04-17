@@ -1,131 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { getConversations } from '../../api/messages';
 import { format } from 'date-fns';
 
-const TEST_CONVERSATIONS = [
+const mockConversations = [
   {
     otherUser: {
-      id: 2,
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane@example.com"
+      id: 1,
+      name: 'John Doe',
+      email: 'user1@test.com'
     },
     lastMessage: {
-      content: "Hello, how are you?",
-      createdAt: new Date().toISOString(),
-      senderId: 2
-    },
-    unreadCount: 1
+      id: 1,
+      content: 'Hi, I found your wallet!',
+      createdAt: new Date(),
+      isRead: false,
+      sender: { id: 1, name: 'John Doe' }
+    }
   },
   {
     otherUser: {
-      id: 3,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john@example.com"
+      id: 2,
+      name: 'Jane Smith',
+      email: 'user2@test.com'
     },
     lastMessage: {
-      content: "When is the meeting?",
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      senderId: 1
-    },
-    unreadCount: 0
+      id: 2,
+      content: 'Thank you! Where can I pick it up?',
+      createdAt: new Date(Date.now() - 3600000), // 1 hour ago
+      isRead: true,
+      sender: { id: 2, name: 'Jane Smith' }
+    }
   }
 ];
 
-const ConversationsList = ({ onSelectUser, selectedUserId }) => {
+const ConversationsList = ({ onSelectConversation, selectedUserId }) => {
   const [conversations, setConversations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  const fetchConversations = async () => {
-    try {
-      setLoading(true);
-      // First try to get real conversations
-      const data = await getConversations();
-      
-      // If no real conversations, use test data
-      if (!data || data.length === 0) {
-        setConversations(TEST_CONVERSATIONS);
-      } else {
-        setConversations(data);
-      }
-      
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      // On error, fall back to test data
-      setConversations(TEST_CONVERSATIONS);
-      setError(null);
-    } finally {
+    // Simulate API call
+    setLoading(true);
+    setTimeout(() => {
+      setConversations(mockConversations);
       setLoading(false);
-    }
-  };
+    }, 1000);
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full p-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full p-4">
-        <div className="text-red-500">{error}</div>
+      <div className="p-4 text-red-500">
+        {error}
       </div>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-4">
-        <div className="text-gray-500 text-center">
-          <p className="text-lg font-medium mb-2">No conversations yet</p>
-          <p className="text-sm">Start a new conversation by selecting a user</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-full p-4 text-gray-500">
+        <p className="text-center mb-4">No conversations yet</p>
+        <button 
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          onClick={() => onSelectConversation(null)}
+        >
+          Start New Conversation
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="sticky top-0 bg-white p-4 border-b shadow-sm z-10">
-        <h2 className="text-xl font-semibold text-gray-800">Messages</h2>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="p-4 border-b flex-none">
+        <button 
+          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          onClick={() => onSelectConversation(null)}
+        >
+          New Message
+        </button>
       </div>
       <div className="flex-1 overflow-y-auto">
         {conversations.map((conversation) => (
           <div
             key={conversation.otherUser.id}
-            onClick={() => onSelectUser(conversation.otherUser.id)}
-            className={`p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors ${
+            className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
               selectedUserId === conversation.otherUser.id ? 'bg-blue-50' : ''
             }`}
+            onClick={() => onSelectConversation(conversation.otherUser)}
           >
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-medium">
-                    {conversation.otherUser.firstName[0]}
-                    {conversation.otherUser.lastName[0]}
-                  </span>
-                </div>
+            <div className="flex items-center">
+              <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                {conversation.otherUser.name.charAt(0)}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">
-                    {conversation.otherUser.firstName} {conversation.otherUser.lastName}
-                  </h3>
-                  <span className="text-xs text-gray-500">
-                    {format(new Date(conversation.lastMessage.createdAt), 'MMM d')}
+              <div className="ml-4 flex-1">
+                <div className="flex justify-between">
+                  <h3 className="font-semibold">{conversation.otherUser.name}</h3>
+                  <span className="text-sm text-gray-500">
+                    {format(new Date(conversation.lastMessage.createdAt), 'MMM d, h:mm a')}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 truncate mt-1">
+                <p className={`text-sm ${conversation.lastMessage.isRead ? 'text-gray-500' : 'text-black font-semibold'}`}>
+                  {conversation.lastMessage.sender.id === conversation.otherUser.id ? '' : 'You: '}
                   {conversation.lastMessage.content}
                 </p>
               </div>
@@ -137,4 +119,4 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
   );
 };
 
-export default ConversationsList; 
+export default ConversationsList;

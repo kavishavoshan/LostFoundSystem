@@ -11,6 +11,15 @@ export class MessagesController {
     return this.messagesService.getTestData();
   }
 
+  @Put(':id')
+  async updateMessage(
+    @Param('id') id: string,
+    @Body('content') content: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.messagesService.update(parseInt(id), content, parseInt(userId));
+  }
+
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
     return this.messagesService.create(createMessageDto, createMessageDto.senderId);
@@ -41,4 +50,9 @@ export class MessagesController {
   delete(@Param('id') id: string, @Query('userId') userId: string) {
     return this.messagesService.delete(parseInt(id), parseInt(userId));
   }
-} 
+
+  @Delete('test-data')
+  async deleteTestData() {
+    return this.messagesService.deleteTestData();
+  }
+}

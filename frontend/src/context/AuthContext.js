@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data);
       setIsAuthenticated(true);
     } catch (error) {
+      console.error('Auth check failed:', error);
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
       setUser(null);
@@ -39,13 +40,23 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
+
+      const { accessToken } = response.data;
+      localStorage.setItem('token', accessToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+      // Get user info from token
+      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+      const userData = {
+        id: tokenPayload.userId,
+        email: tokenPayload.email
+      };
+
+      setUser(userData);
       setIsAuthenticated(true);
-      return true;
+      return response.data;
     } catch (error) {
+      console.error('Login failed:', error);
       throw error;
     }
   };
@@ -53,13 +64,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await axios.post('http://localhost:3001/auth/register', userData);
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      setIsAuthenticated(true);
-      return true;
+      return response.data;
     } catch (error) {
+      console.error('Registration failed:', error);
       throw error;
     }
   };
@@ -72,7 +79,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    </div>;
   }
 
   return (

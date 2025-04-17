@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
@@ -50,5 +50,19 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
 
     return { accessToken };
+  }
+
+  // Get current user
+  async getCurrentUser(userId: number): Promise<Partial<User>> {
+    const user = await this.userRepository.findOne({ 
+      where: { id: userId },
+      select: ['id', 'name', 'email', 'firstName', 'lastName', 'createdAt', 'updatedAt']
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 }

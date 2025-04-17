@@ -1,28 +1,33 @@
-import { useState, useContext } from "react";
-import { login } from "../../api/auth";
-import { AuthContext } from "../../context/AuthContext";
+import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/UI/Footer";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
-  // const { setUser } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(null); // Clear error when user types
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      const data = await login(formData.email, formData.password);
-      // setUser({ token: data.accessToken });
-      navigate("/home");
+      await login(formData.email, formData.password);
+      navigate("/messages");
     } catch (err) {
       console.error("Login error:", err);
-      setError("Login failed. Please try again.");
+      setError(err.response?.data?.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -122,9 +127,12 @@ const Login = () => {
               <div>
                 <button
                   type="submit"
-                  className="flex justify-center w-full px-4 py-3 text-base font-medium text-white bg-zinc-900 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  disabled={loading}
+                  className={`flex justify-center w-full px-4 py-3 text-base font-medium text-white bg-zinc-900 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                    loading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Sign in
+                  {loading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
             </form>

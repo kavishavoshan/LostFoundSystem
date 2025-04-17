@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Message } from './message.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { User } from '../user/user.entity';
+import { In } from 'typeorm';
 
 @Injectable()
 export class MessagesService implements OnModuleInit {
@@ -32,52 +33,69 @@ export class MessagesService implements OnModuleInit {
     };
   }
 
-  private async createTestData() {
-    // Create test users if they don't exist
-    let user1 = await this.userRepository.findOne({ where: { email: 'user1@test.com' } });
-    let user2 = await this.userRepository.findOne({ where: { email: 'user2@test.com' } });
+  async createTestData() {
+    // Check if test users exist
+    const existingUser1 = await this.userRepository.findOne({ where: { email: 'user1@test.com' } });
+    const existingUser2 = await this.userRepository.findOne({ where: { email: 'user2@test.com' } });
 
-    if (!user1) {
-      const newUser1 = this.userRepository.create({
-        email: 'user1@test.com',
-        firstName: 'John',
-        lastName: 'Doe',
+    let user1, user2;
+
+    if (!existingUser1) {
+      user1 = this.userRepository.create({
         name: 'John Doe',
-        password: 'password123'
+        email: 'user1@test.com',
+        password: 'password123'  // Will be hashed by @BeforeInsert hook
       });
-      user1 = await this.userRepository.save(newUser1);
+      user1 = await this.userRepository.save(user1);
+    } else {
+      user1 = existingUser1;
     }
 
-    if (!user2) {
-      const newUser2 = this.userRepository.create({
-        email: 'user2@test.com',
-        firstName: 'Jane',
-        lastName: 'Smith',
+    if (!existingUser2) {
+      user2 = this.userRepository.create({
         name: 'Jane Smith',
-        password: 'password123'
+        email: 'user2@test.com',
+        password: 'password123'  // Will be hashed by @BeforeInsert hook
       });
-      user2 = await this.userRepository.save(newUser2);
+      user2 = await this.userRepository.save(user2);
+    } else {
+      user2 = existingUser2;
     }
 
-    // Create test messages if none exist
-    const messageCount = await this.messageRepository.count();
-    if (messageCount === 0) {
-      const message1 = this.messageRepository.create({
-        content: 'Hello! I found your wallet.',
-        sender: user1,
-        receiver: user2,
-        isRead: false
-      });
+    // Create test messages if they don't exist
+    const existingMessages = await this.messageRepository.find();
+    if (existingMessages.length === 0) {
+      const messages = [
+        {
+          content: 'Hi, I found your wallet!',
+          sender: user2,
+          receiver: user1,
+          isRead: false
+        },
+        {
+          content: 'Thank you so much! Where can I pick it up?',
+          sender: user1,
+          receiver: user2,
+          isRead: true
+        },
+        {
+          content: 'I can meet you at the library tomorrow at 2pm',
+          sender: user2,
+          receiver: user1,
+          isRead: false
+        }
+      ];
 
-      const message2 = this.messageRepository.create({
-        content: 'Thank you so much! Where can I pick it up?',
-        sender: user2,
-        receiver: user1,
-        isRead: false
-      });
-
-      await this.messageRepository.save([message1, message2]);
+      for (const msg of messages) {
+        const message = this.messageRepository.create(msg);
+        await this.messageRepository.save(message);
+      }
     }
+
+    return {
+      users: [user1, user2],
+      messages: await this.messageRepository.find()
+    };
   }
 
   async create(createMessageDto: CreateMessageDto, senderId: number): Promise<Message> {
@@ -143,6 +161,19 @@ export class MessagesService implements OnModuleInit {
     return this.messageRepository.save(message);
   }
 
+  async update(messageId: number, content: string, userId: number): Promise<Message> {
+    const message = await this.messageRepository.findOne({
+      where: { id: messageId, sender: { id: userId } },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    message.content = content;
+    return this.messageRepository.save(message);
+  }
+
   async delete(messageId: number, userId: number): Promise<void> {
     const message = await this.messageRepository.findOne({
       where: { id: messageId, sender: { id: userId } },
@@ -154,4 +185,14 @@ export class MessagesService implements OnModuleInit {
 
     await this.messageRepository.remove(message);
   }
-} 
+
+  async deleteTestData() {
+    // Delete all messages
+    await this.messageRepository.delete({});
+    
+    // Delete test users
+    await this.userRepository.delete({ email: In(['user1@test.com', 'user2@test.com']) });
+    
+    return { message: 'Test data deleted successfully' };
+  }
+}
