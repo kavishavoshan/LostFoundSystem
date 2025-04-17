@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, Put } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 
@@ -12,6 +12,7 @@ export class MessagesController {
   }
 
   @Put(':id')
+
   async updateMessage(
     @Param('id') id: string,
     @Body('content') content: string,
