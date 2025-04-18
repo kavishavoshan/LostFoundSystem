@@ -1,20 +1,22 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 import { User } from '../user/user.entity';
 
-@Entity()
-export class Product {
-  @PrimaryGeneratedColumn()
-  id: number;
+export type ProductDocument = Product & Document;
 
-  @Column()
+@Schema({ timestamps: true })
+export class Product {
+  @Prop({ required: true })
   name: string;
 
-  @Column('decimal')
+  @Prop({ required: true })
   price: number;
 
-  @Column()
+  @Prop({ required: true })
   description: string;
 
-  @ManyToOne(() => User, (user) => user.products, { onDelete: 'CASCADE' })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
   user: User;
 }
+
+export const ProductSchema = SchemaFactory.createForClass(Product);

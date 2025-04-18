@@ -1,34 +1,49 @@
-import { Controller, Post, Get, Param, Body, Put, Delete } from '@nestjs/common';
-import { FoundItemService } from './found-items.service';
-import { CreateFoundItemDto } from './dto/founditems.create-found-items';
-import { UpdateFoundItemDto } from './dto/founditems.update-found-item';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { FoundItemsService } from './found-items.service';
+import { CreateFoundItemDto } from './dto/create-found-item.dto';
+import { UpdateFoundItemDto } from './dto/update-found-item.dto'
 
 @Controller('found-items')
-export class FoundItemController {
-  constructor(private readonly foundItemService: FoundItemService) {}
+export class FoundItemsController {
+  constructor(private readonly foundItemsService: FoundItemsService) {}
 
-  @Post('createFoundItem')
+  @Post()
   create(@Body() createFoundItemDto: CreateFoundItemDto) {
-    return this.foundItemService.create(createFoundItemDto);
+    return this.foundItemsService.create(createFoundItemDto);
   }
 
-  @Get('getAllFoundItems')
+  @Get()
   findAll() {
-    return this.foundItemService.findAll();
+    return this.foundItemsService.findAll();
   }
 
-  @Get('getFoundItem/:id')
-  findOne(@Param('id') id: number) {
-    return this.foundItemService.findOne(id);
+  @Get('user/:userId')
+  findByUser(@Param('userId') userId: string) {
+    return this.foundItemsService.findByUser(userId);
   }
 
-    @Put('updateFoundItem/:id')
-    update(@Param('id') id: number, @Body() updateLostItemDto: UpdateFoundItemDto) {
-      return this.foundItemService.update(id, updateLostItemDto);
-    }
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.foundItemsService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateFoundItemDto: UpdateFoundItemDto) {
+    return this.foundItemsService.update(id, updateFoundItemDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.foundItemsService.remove(id);
+  }
+
+    // @Put('updateFoundItem/:id')
+    // update(@Param('id') id: number, @Body() updateLostItemDto: UpdateFoundItemDto) {
+    //   return this.foundItemService.update(id, updateLostItemDto);
+    // }
   
-    @Delete('deleteLostItem/:id')
-    remove(@Param('id') id: number) {
-      return this.foundItemService.remove(id);
-    }
+    // @Delete('deleteLostItem/:id')
+    // remove(@Param('id') id: number) {
+    //   return this.foundItemService.remove(id);
+    // }
 }

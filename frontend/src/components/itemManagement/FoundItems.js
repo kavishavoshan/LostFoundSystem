@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getFoundItems, createFoundItem } from "../../api/foundItems";
+
 import { Input } from "../UI/input";
 import { Button } from "../UI/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../UI/card";
@@ -8,12 +9,16 @@ import { Description } from "@headlessui/react";
 
 const FoundItems = () => {
   const [items, setItems] = useState([]);
+  const [user, setUser] = useState();
+  
+
   const [newItem, setNewItem] = useState({
     itemName: "",
     imageUrl: "",
     foundLocation: "",
-    contactNumber: "",
-    Description: "",
+    contactNumber: user?.phoneNumber || "",
+    description: "",
+    userName: user?.name || "",
   });
 
   useEffect(() => {
@@ -34,7 +39,14 @@ const FoundItems = () => {
     try {
       await createFoundItem(newItem);
       fetchItems();
-      setNewItem({ itemName: "", imageUrl: "", foundLocation: "", contactNumber: "" });
+      setNewItem({
+        itemName: "",
+        imageUrl: "",
+        foundLocation: "",
+        contactNumber: user?.phoneNumber || "",
+        description: "",
+        userName: user?.name || "",
+      });
     } catch (error) {
       console.error("Failed to add item");
     }
@@ -49,6 +61,22 @@ const FoundItems = () => {
             <p className="mt-1 text-sm leading-6 text-gray-600">Please provide accurate information about the Found Item.</p>
 
             <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <label htmlFor="userName" className="block text-sm font-medium leading-6 text-gray-900">
+                  Your Name
+                </label>
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    name="userName"
+                    id="userName"
+                    value={user?.name || ""}
+                    disabled
+                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 bg-gray-100 shadow-sm outline-1 -outline-offset-1 outline-gray-300 sm:text-sm"
+                  />
+                </div>
+              </div>
+
               <div className="sm:col-span-3">
                 <label htmlFor="itemName" className="block text-sm font-medium leading-6 text-gray-900">
                   Item Name
@@ -94,11 +122,9 @@ const FoundItems = () => {
                     type="text"
                     name="contactNumber"
                     id="contactNumber"
-                    value={newItem.contactNumber}
-                    onChange={handleChange}
-                    placeholder="E.g. 0777788899"
-                    required
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
+                    value={user?.phoneNumber || ""}
+                    disabled
+                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 bg-gray-100 shadow-sm outline-1 -outline-offset-1 outline-gray-300 sm:text-sm"
                   />
                 </div>
               </div>
