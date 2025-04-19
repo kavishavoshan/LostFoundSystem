@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import Footer from "../../components/UI/Footer";
+import PasswordInput from '../../components/UI/PasswordInput';
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({ 
@@ -130,25 +131,16 @@ const AdminLogin = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className={`block w-full px-4 py-3 text-lg border-2 rounded-md shadow-sm ${
-                      errors.password ? "border-red-500" : "border-black"
-                    } focus:border-indigo-500 focus:ring-indigo-500`}
-                  />
-                  {errors.password && (
-                    <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                  )}
-                </div>
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  error={errors.password}
+                />
               </div>
 
               <div className="flex items-center justify-between pt-2">

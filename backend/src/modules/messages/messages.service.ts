@@ -1,17 +1,15 @@
 import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Message } from './message.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Message, MessageDocument } from './schemas/message.schema';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { User } from '../user/user.entity';
+import { User } from '../user/schemas/user.schema';
 
 @Injectable()
 export class MessagesService implements OnModuleInit {
   constructor(
-    @InjectRepository(Message)
-    private messageRepository: Repository<Message>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
+    @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
   async onModuleInit() {
@@ -19,10 +17,8 @@ export class MessagesService implements OnModuleInit {
   }
 
   async getTestData() {
-    const users = await this.userRepository.find();
-    const messages = await this.messageRepository.find({
-      relations: ['sender', 'receiver'],
-    });
+    const users = await this.userModel.find().exec();
+    const messages = await this.messageModel.find().populate('sender receiver').exec();
 
     return {
       users,
@@ -34,105 +30,110 @@ export class MessagesService implements OnModuleInit {
 
   private async createTestData() {
     // Create test users if they don't exist
-    let user1 = await this.userRepository.findOne({ where: { email: 'user1@test.com' } });
-    let user2 = await this.userRepository.findOne({ where: { email: 'user2@test.com' } });
+    let user1 = await this.userModel.findOne({ email: 'user1@test.com' });
+    let user2 = await this.userModel.findOne({ email: 'user2@test.com' });
 
     if (!user1) {
-      const newUser1 = this.userRepository.create({
+      user1 = await this.userModel.create({
         email: 'user1@test.com',
         firstName: 'John',
         lastName: 'Doe',
         name: 'John Doe',
         password: 'password123'
       });
-      user1 = await this.userRepository.save(newUser1);
     }
 
     if (!user2) {
-      const newUser2 = this.userRepository.create({
+      user2 = await this.userModel.create({
         email: 'user2@test.com',
         firstName: 'Jane',
         lastName: 'Smith',
         name: 'Jane Smith',
         password: 'password123'
       });
-      user2 = await this.userRepository.save(newUser2);
     }
 
     // Create test messages if none exist
-    const messageCount = await this.messageRepository.count();
+    const messageCount = await this.messageModel.countDocuments();
     if (messageCount === 0) {
-      const message1 = this.messageRepository.create({
-        content: 'Hello! I found your wallet.',
-        sender: user1,
-        receiver: user2,
-        isRead: false
-      });
-
-      const message2 = this.messageRepository.create({
-        content: 'Thank you so much! Where can I pick it up?',
-        sender: user2,
-        receiver: user1,
-        isRead: false
-      });
-
-      await this.messageRepository.save([message1, message2]);
+      await this.messageModel.create([
+        {
+          content: 'Hello! I found your wallet.',
+          sender: user1._id,
+          receiver: user2._id,
+          isRead: false
+        },
+        {
+          content: 'Thank you so much! Where can I pick it up?',
+          sender: user2._id,
+          receiver: user1._id,
+          isRead: false
+        }
+      ]);
     }
   }
 
-  async create(createMessageDto: CreateMessageDto, senderId: number): Promise<Message> {
-    const sender = await this.userRepository.findOne({ where: { id: senderId } });
-    const receiver = await this.userRepository.findOne({ where: { id: createMessageDto.receiverId } });
+  async create(createMessageDto: CreateMessageDto, userId: string): Promise<MessageDocument> {
+    const createdMessage = new this.messageModel({
+      ...createMessageDto,
+      senderId: userId,
+    });
+    return createdMessage.save();
+  }
 
-    if (!sender || !receiver) {
-      throw new NotFoundException('User not found');
+  async findByUserId(userId: string): Promise<MessageDocument[]> {
+    return this.messageModel.find({
+      $or: [{ senderId: userId }, { receiverId: userId }],
+    }).exec();
+  }
+
+  async findConversationsByUserId(userId: string): Promise<MessageDocument[]> {
+    return this.messageModel.find({
+      $or: [{ senderId: userId }, { receiverId: userId }],
+    })
+    .sort({ createdAt: -1 })
+    .exec();
+  }
+
+  async findAll(): Promise<MessageDocument[]> {
+    return this.messageModel.find().populate('senderId receiverId').exec();
+  }
+
+  async findOne(id: string): Promise<MessageDocument> {
+    const message = await this.messageModel.findById(id).populate('senderId receiverId').exec();
+    if (!message) {
+      throw new NotFoundException('Message not found');
     }
-
-    const message = this.messageRepository.create({
-      content: createMessageDto.content,
-      sender,
-      receiver,
-    });
-
-    return this.messageRepository.save(message);
+    return message;
   }
 
-  async getConversation(userId: number, otherUserId: number): Promise<Message[]> {
-    return this.messageRepository.find({
-      where: [
-        { sender: { id: userId }, receiver: { id: otherUserId } },
-        { sender: { id: otherUserId }, receiver: { id: userId } },
-      ],
-      order: { createdAt: 'ASC' },
-      relations: ['sender', 'receiver'],
-    });
+  async getConversations(userId: string): Promise<MessageDocument[]> {
+    return this.messageModel
+      .find({
+        $or: [{ senderId: userId }, { receiverId: userId }],
+      })
+      .sort({ createdAt: -1 })
+      .populate('senderId receiverId')
+      .exec();
   }
 
-  async getConversations(userId: number): Promise<{ otherUser: User; lastMessage: Message }[]> {
-    const messages = await this.messageRepository.find({
-      where: [
-        { sender: { id: userId } },
-        { receiver: { id: userId } },
-      ],
-      order: { createdAt: 'DESC' },
-      relations: ['sender', 'receiver'],
-    });
-
-    const conversations = new Map<number, { otherUser: User; lastMessage: Message }>();
-
-    for (const message of messages) {
-      const otherUser = message.sender.id === userId ? message.receiver : message.sender;
-      if (!conversations.has(otherUser.id)) {
-        conversations.set(otherUser.id, { otherUser, lastMessage: message });
-      }
-    }
-
-    return Array.from(conversations.values());
+  async getConversation(userId: string, otherUserId: string): Promise<MessageDocument[]> {
+    return this.messageModel
+      .find({
+        $or: [
+          { senderId: userId, receiverId: otherUserId },
+          { senderId: otherUserId, receiverId: userId },
+        ],
+      })
+      .sort({ createdAt: 1 })
+      .populate('senderId receiverId')
+      .exec();
   }
 
-  async markAsRead(messageId: number, userId: number): Promise<Message> {
-    const message = await this.messageRepository.findOne({
-      where: { id: messageId, receiver: { id: userId } },
+  async markAsRead(id: string, userId: string): Promise<MessageDocument> {
+    const message = await this.messageModel.findOne({
+      _id: id,
+      receiverId: userId,
     });
 
     if (!message) {
@@ -140,18 +141,18 @@ export class MessagesService implements OnModuleInit {
     }
 
     message.isRead = true;
-    return this.messageRepository.save(message);
+    return message.save();
   }
 
-  async delete(messageId: number, userId: number): Promise<void> {
-    const message = await this.messageRepository.findOne({
-      where: { id: messageId, sender: { id: userId } },
-    });
-
+  async delete(id: string, userId: string): Promise<MessageDocument | null> {
+    const message = await this.messageModel.findOne({ _id: id, $or: [{ senderId: userId }, { receiverId: userId }] });
     if (!message) {
       throw new NotFoundException('Message not found');
     }
-
-    await this.messageRepository.remove(message);
+    const deletedMessage = await this.messageModel.findByIdAndDelete(id).exec();
+    if (!deletedMessage) {
+      throw new NotFoundException('Message not found');
+    }
+    return deletedMessage;
   }
 } 

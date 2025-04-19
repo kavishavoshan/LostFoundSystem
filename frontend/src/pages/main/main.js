@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState } from "react";
 // Import the logo
 import Footer from "../../components/UI/Footer";
@@ -96,6 +97,21 @@ function Main() {
             <p className="mt-8 text-lg font-medium text-gray-400 text-pretty sm:text-xl/8">
               {" "}
               {/* Changed paragraph color */}
+=======
+import React from "react";
+import logo from "../../images/image.jpg";
+
+function Main() {
+  return (
+    <div className="text-white bg-darkBlue min-h-screen">
+      <div className="relative px-6 isolate lg:px-8">
+        <div className="max-w-2xl py-32 mx-auto sm:py-48 lg:py-56">
+          <div className="text-center">
+            <h1 className="text-5xl font-semibold tracking-tight text-white text-balance sm:text-7xl">
+              Lost & Found System
+            </h1>
+            <p className="mt-8 text-lg font-medium text-gray-400 text-pretty sm:text-xl/8">
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
               Lost & Found System is a website that helps people recover lost
               items and return found belongings. Users can report, search, and
               connect with others to reunite items with their rightful owners
@@ -112,7 +128,10 @@ function Main() {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
       <Footer />
+=======
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
     </div>
   );
 }

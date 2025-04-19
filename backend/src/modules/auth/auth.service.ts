@@ -1,7 +1,7 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../user/user.entity';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from '../user/schemas/user.schema';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcryptjs';
@@ -10,45 +10,114 @@ import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly jwtService: JwtService,
   ) {}
 
-  // Register new user
-  async register(registerDto: RegisterUserDto): Promise<{ status: string; message: string }> {
-    const { name, email, password } = registerDto;
+  // Get user by ID
+  async getUserById(userId: string): Promise<any> {
+    try {
+      const user = await this.userModel.findById(userId).exec();
+      console.log('User found:', user);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+     
+      
+      // Convert to plain object and remove sensitive data
+      const userObj =  user.toObject();
+      console.log('User object:', userObj);
+      const { password, ...userWithoutPassword } = userObj;
+      console.log('User without password:', userWithoutPassword);
+      
+      return userWithoutPassword;
+    } catch (error) {
+      throw new NotFoundException('User not found');
+    }
+  }
 
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+  // Register new user
+  async register(registerDto: RegisterUserDto): Promise<{ accessToken: string; user: User }> {
+    console.log('AuthService received registration data:', registerDto);
+    const { name, email, password, mobileNumber, contact } = registerDto;
+    console.log('Extracted mobile number:', mobileNumber);
+    console.log('Extracted contact:', contact);
+
+    // Check if user already exists
+    const existingUser = await this.userModel.findOne({ 
+      $or: [
+        { email },
+        ...(mobileNumber ? [{ mobileNumber }] : []),
+        ...(contact ? [{ contact }] : [])
+      ]
+    });
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException(
+        existingUser.email === email 
+          ? 'Email already registered' 
+          : existingUser.mobileNumber === mobileNumber
+            ? 'Mobile number already registered'
+            : 'Contact already registered'
+      );
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.userRepository.create({ name, email, password: hashedPassword });
 
-    await this.userRepository.save(user);
+    // Create new user
+    const user = new this.userModel({
+      name,
+      email,
+      password: hashedPassword,
+      mobileNumber,
+      contact,
+    });
 
-    return { status: 'success', message: 'User registered successfully' };
+    await user.save();
+
+    // Generate JWT token
+    const payload = { sub: user._id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: user.toJSON(),
+    };
   }
 
   // Login user and generate JWT
-  async login(loginDto: LoginUserDto): Promise<{ accessToken: string }> {
+  async login(loginDto: LoginUserDto): Promise<{ accessToken: string; user: User }> {
     const { email, password } = loginDto;
 
-    const user = await this.userRepository.findOne({ where: { email } });
+    // Find user by email
+    const user = await this.userModel.findOne({ email });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+<<<<<<< HEAD
+=======
+    // Verify password
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+<<<<<<< HEAD
     const payload = { userId: user.id, email: user.email };
     const accessToken = this.jwtService.sign(payload);
 
     return { accessToken };
+=======
+    // Generate JWT token
+    const payload = { sub: user._id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: user.toJSON(),
+    };
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
   }
 }

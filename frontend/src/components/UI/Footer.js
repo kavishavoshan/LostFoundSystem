@@ -1,32 +1,49 @@
-import React from "react";
-import logo from "../../images/image.jpg"; // Ensure the path is correct
+import React from 'react';
+import { Link } from 'react-router-dom';
+import logo from '../../images/image.jpg';
 
-const Footer = ({ companyName = "Reclaim" }) => {
-  const currentYear = new Date().getFullYear();
-
+const Footer = () => {
   return (
-    <footer className="flex fixed bottom-0 w-full py-0 text-center text-gray-400 bg-darkBlue">
-      <div className="container px-4 mx-auto flex flex-col md:flex-row items-center justify-between">
-        <div className="flex items-center space-x-6">
-          <img src={logo} alt="Company Logo" className="w-auto h-11" />
-          <small>
-            &copy; {currentYear} {companyName}. All rights reserved.
-          </small>
+    <footer className="bg-[#0B1829] text-white">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          {/* Logo and Description */}
+          <div className="md:col-span-6 space-y-4">
+            <Link to="/home" className="inline-block">
+              <img className="h-16 w-auto" src={logo} alt="RC Logo" />
+            </Link>
+            <p className="text-gray-300 text-sm max-w-xl mt-4">
+              Reclaim is a smart and simple lost and found platform that helps people
+              report, search, and recover lost items. Whether you've misplaced
+              something or found someone else's belongings, Reclaim makes it easy to
+              reconnect items with their rightful owners.
+            </p>
+          </div>
+
+          {/* Empty space for alignment */}
+          <div className="md:col-span-3" />
+
+          {/* Links */}
+          <div className="md:col-span-3 space-y-4">
+            <div className="flex justify-end gap-6">
+              <Link to="/how-it-works" className="text-sm text-gray-300 hover:text-white">
+                How It Works
+              </Link>
+              <Link to="/privacy-policy" className="text-sm text-gray-300 hover:text-white">
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className="text-sm text-gray-300 hover:text-white">
+                Terms & Conditions
+              </Link>
+            </div>
+          </div>
         </div>
 
-        {/* Footer Links */}
-        <div className="flex space-x-4 mt-3 md:mt-0">
-          <a href="/privacy" className="text-gray-400 hover:text-white text-sm">
-            Privacy Policy
-          </a>
-          <span className="text-gray-500">•</span>
-          <a href="/terms" className="text-gray-400 hover:text-white text-sm">
-            Terms of Service
-          </a>
-          <span className="text-gray-500">•</span>
-          <a href="/contact" className="text-gray-400 hover:text-white text-sm">
-            Contact Us
-          </a>
+        {/* Copyright */}
+        <div className="mt-8 pt-8 border-t border-gray-800">
+          <p className="text-center text-sm text-gray-400">
+            © 2025 Reclaim/ITPM-70. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

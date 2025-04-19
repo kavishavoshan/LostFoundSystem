@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsController } from './analytics.controller';
-import { LostItem } from '../lost-items/lostitems.entity';
-import { FoundItem } from '../found-items/found-items.entity';
+import { LostItem, LostItemSchema } from '../lost-items/lostitems.entity';
+import { FoundItem, FoundItemSchema } from '../found-items/found-items.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LostItem, FoundItem])],
+  imports: [
+    MongooseModule.forFeature([
+      { name: LostItem.name, schema: LostItemSchema },
+      { name: FoundItem.name, schema: FoundItemSchema }
+    ])
+  ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
   exports: [AnalyticsService],

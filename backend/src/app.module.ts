@@ -1,41 +1,29 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import { User } from './modules/user/user.entity';
 import { UserModule } from './modules/user/user.module';
-import { Product } from './modules/product/product.entity';
 import { ProductModule } from './modules/product/product.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { LostItem } from './modules/lost-items/lostitems.entity';
-import { LostItemModule } from './modules/lost-items/lostitems.module';
-import { Message } from './modules/messages/message.entity';
 import { MessagesModule } from './modules/messages/messages.module';
-import { FoundItem } from './modules/found-items/found-items.entity';
-import { FoundItemModule } from './modules/found-items/found-items.module';
+import { LostItemsModule } from './modules/lost-items/lost-items.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(), // Loads .env variables
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      autoLoadEntities: true,
-      synchronize: true, // Creates the database and tables automatically
-      entities: [User, Product, LostItem, Message, FoundItem],
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/lostfound', {
+      connectionFactory: (connection) => {
+        connection.plugin(require('mongoose-autopopulate'));
+        return connection;
+      },
     }),
-    TypeOrmModule.forFeature([User, LostItem]),
     UserModule,
     ProductModule,
     AuthModule,
-    LostItemModule,
+    LostItemsModule,
     MessagesModule,
-    FoundItemModule,
+    FoundItemsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
