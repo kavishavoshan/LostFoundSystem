@@ -64,3 +64,4 @@ venv/
 myenv/
 */venv/
 */myenv/
+.qodo
