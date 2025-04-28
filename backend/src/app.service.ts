@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+=======
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
@@ -20,6 +26,7 @@ export class AppService implements OnModuleInit {
     }
   }
 
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
   getHello(): string {
     return 'Hello World!';
   }

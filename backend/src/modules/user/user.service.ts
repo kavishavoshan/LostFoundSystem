@@ -13,6 +13,54 @@ import { LostItemDocument } from '../lost-items/lost-item.entity';
 
 @Injectable()
 export class UserService {
+  uploadProfileImage(userId: string, file: any, arg2: string) {
+    throw new Error('Method not implemented.');
+  }
+  getUserReviews(id: string) {
+    throw new Error('Method not implemented.');
+  }
+  getUserFoundItems(id: string) {
+    throw new Error('Method not implemented.');
+  }
+  getUserLostItems(id: string) {
+    throw new Error('Method not implemented.');
+  }
+  uploadProfileImage(userId: string, file: any, type: string) {
+    throw new Error('Method not implemented.');
+  }
+  getUserReviews(userId: string) {
+    throw new Error('Method not implemented.');
+  }
+  getUserFoundItems(userId: string) {
+    throw new Error('Method not implemented.');
+  }
+  getUserLostItems(userId: string) {
+    throw new Error('Method not implemented.');
+  }
+  remove(userId: string, userId1: string) {
+    throw new Error('Method not implemented.');
+  }
+  update(userId: string, updateUserDto: UpdateUserDto, userId1: string) {
+    throw new Error('Method not implemented.');
+  }
+  findOne(userId: string) {
+    throw new Error('Method not implemented.');
+  }
+  remove(id: string, userId: string) {
+    throw new Error('Method not implemented.');
+  }
+  update(id: string, updateUserDto: UpdateUserDto, userId: string) {
+    throw new Error('Method not implemented.');
+  }
+  findOne(id: string) {
+    throw new Error('Method not implemented.');
+  }
+  findAll() {
+    throw new Error('Method not implemented.');
+  }
+  create(createUserDto: CreateUserDto) {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(LostItem.name) private lostItemModel: Model<LostItemDocument>,

@@ -1,4 +1,13 @@
 import { Module } from '@nestjs/common';
+<<<<<<< HEAD
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './user.entity';
+import { UserService } from './user.service';
+import { UserController } from './user.controller';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([User])],
+=======
 import { MongooseModule } from '@nestjs/mongoose';
 import { MulterModule } from '@nestjs/platform-express';
 import { UserController } from './user.controller';
@@ -48,6 +57,7 @@ import { existsSync, mkdirSync } from 'fs';
       },
     }),
   ],
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],

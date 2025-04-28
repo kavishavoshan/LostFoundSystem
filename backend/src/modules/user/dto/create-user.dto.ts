@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+=======
 import { IsEmail, IsNotEmpty, IsString, MinLength, Matches, IsOptional } from 'class-validator';
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -8,6 +12,8 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
+<<<<<<< HEAD
+=======
 
   @IsNotEmpty()
   @IsString()
@@ -26,4 +32,5 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   coverImageUrl?: string;
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
 }

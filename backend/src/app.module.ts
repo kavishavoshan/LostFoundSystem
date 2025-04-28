@@ -6,9 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './modules/user/user.module';
 import { ProductModule } from './modules/product/product.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { LostItemsModule } from './modules/lost-items/lostitems.module';
 import { MessagesModule } from './modules/messages/messages.module';
-import { FoundItemsModule } from './modules/found-items/found-items.module';
+import { LostItemsModule } from './modules/lost-items/lost-items.module';
 
 @Module({
   imports: [

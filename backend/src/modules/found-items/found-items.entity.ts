@@ -1,3 +1,31 @@
+<<<<<<< HEAD
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { User } from '../user/user.entity';
+
+@Entity()
+export class FoundItem {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  itemName: string;
+
+  @Column()
+  imageUrl: string;
+
+  @Column()
+  foundLocation: string;
+
+  @Column()
+  contactNumber: string;
+
+  @Column()
+  description: string;
+
+  @ManyToOne(() => User, (user) => user.foundItems, { onDelete: 'CASCADE' })
+  finder: User;
+}
+=======
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import { User } from '../user/user.entity';
@@ -26,3 +54,4 @@ export class FoundItem {
 }
 
 export const FoundItemSchema = SchemaFactory.createForClass(FoundItem);
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad

@@ -95,12 +95,21 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+<<<<<<< HEAD
+=======
     // Verify password
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+<<<<<<< HEAD
+    const payload = { userId: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
+=======
     // Generate JWT token
     const payload = { sub: user._id, email: user.email };
     const accessToken = this.jwtService.sign(payload);
@@ -109,5 +118,6 @@ export class AuthService {
       accessToken,
       user: user.toJSON(),
     };
+>>>>>>> ec05ea273e228e3408f97b83d31a87c3c3c072ad
   }
 }
