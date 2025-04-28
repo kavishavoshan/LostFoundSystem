@@ -83,6 +83,48 @@ export const markMessageAsRead = async (messageId) => {
   }
 };
 
+// Edit a message
+export const editMessage = async (messageId, content) => {
+  try {
+    const response = await axios.patch(`${API_BASE_URL}/${messageId}/edit`, { content });
+    return response.data;
+  } catch (error) {
+    console.error('Error editing message:', error);
+    throw error;
+  }
+};
+
+// Delete a message
+export const deleteMessage = async (messageId) => {
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/${messageId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    throw error;
+  }
+};
+
+// Upload an image
+export const uploadImage = async (receiverId, file) => {
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('senderId', localStorage.getItem('userId'));
+    formData.append('receiverId', receiverId);
+    
+    const response = await axios.post(`${API_BASE_URL}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+};
+
 // Get unread messages
 export const getUnreadMessages = async () => {
   try {
