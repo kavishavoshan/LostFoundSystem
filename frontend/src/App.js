@@ -58,7 +58,7 @@ function App() {
         <Route path="/userprofile" element={<UserProfile />} />
       </Routes>
 
-      {location.pathname !== "/" && <Footer />}
+      {location.pathname !== "/" && location.pathname !== "/messages" && <Footer />}
     </>
   );
 }
