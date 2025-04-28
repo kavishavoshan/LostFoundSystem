@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Get, Param, Patch, UseGuards, Req, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Delete, UseGuards, Req, Headers, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { MessagesService } from './messages.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import 'multer'; // Add import for multer types
 
 @Controller('messages')
 // Removed the global JWT guard to allow access without authentication
@@ -45,5 +47,31 @@ export class MessagesController {
       throw new Error('User ID is required');
     }
     return this.messagesService.getUnreadMessages(Number(userId));
+  }
+
+  @Patch(':messageId/edit')
+  async editMessage(
+    @Param('messageId') messageId: number,
+    @Body('content') content: string,
+  ) {
+    return this.messagesService.editMessage(messageId, content);
+  }
+
+  @Delete(':messageId')
+  async deleteMessage(@Param('messageId') messageId: number) {
+    return this.messagesService.deleteMessage(messageId);
+  }
+
+  @Post('upload-image')
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadImage(
+    @Body('senderId') senderId: number,
+    @Body('receiverId') receiverId: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    // In a real implementation, you would upload the file to a storage service
+    // and get back a URL to store in the database
+    const imageUrl = `http://localhost:3001/uploads/${file.filename}`;
+    return this.messagesService.uploadImage(senderId, receiverId, imageUrl);
   }
 }
