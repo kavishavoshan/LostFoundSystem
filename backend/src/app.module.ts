@@ -14,6 +14,8 @@ import { Message } from './modules/messages/message.entity';
 import { MessagesModule } from './modules/messages/messages.module';
 import { FoundItem } from './modules/found-items/found-items.entity';
 import { FoundItemModule } from './modules/found-items/found-items.module';
+import { NewsPage } from './modules/news/news-page.entity';
+import { NewsPageModule } from './modules/news/news-page.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { FoundItemModule } from './modules/found-items/found-items.module';
     LostItemModule,
     MessagesModule,
     FoundItemModule,
+    NewsPageModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],
