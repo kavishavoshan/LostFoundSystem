@@ -28,8 +28,6 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     console.log(`Client disconnected: ${client.id}`);
   }
 
-<<<<<<< HEAD
-=======
   @SubscribeMessage('typing')
   handleTyping(client: Socket, data: { recipientId: string, isTyping: boolean }) {
     this.server.to(data.recipientId).emit('typing', {
@@ -46,15 +44,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     });
   }
 
->>>>>>> message-latest
   @SubscribeMessage('sendMessage')
   async handleMessage(client: Socket, payload: CreateMessageDto & { receiverId: string }) {
     const message = await this.messagesService.create(payload, client.id);
     client.to(String(payload.receiverId)).emit('message', message);
     return message;
   }
-<<<<<<< HEAD
-} 
-=======
 }
->>>>>>> message-latest
