@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { FiUpload, FiX, FiImage } from 'react-icons/fi';
-import logo from '../../images/image.jpg'; // Make sure to import your logo
+import { useState, useEffect } from 'react';
+import { FiX, FiImage } from 'react-icons/fi';
+import logo from '../../images/image.jpg';
+import { createNewsArticle, getNewsArticles } from '../../api/newsApi'; // Adjust path as needed
 
 const NewspaperSection = () => {
   const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newArticle, setNewArticle] = useState({
     headline: '',
     content: '',
@@ -17,6 +19,32 @@ const NewspaperSection = () => {
     })
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Fetch articles from backend on mount
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setLoading(true);
+      try {
+        const data = await getNewsArticles();
+        setArticles(
+          data.map(article => ({
+            id: article.id || article._id,
+            headline: article.headline,
+            content: article.story,
+            imageUrl: article.imagePath ? `http://localhost:3001${article.imagePath}` : null,
+            date: article.createdAt
+              ? new Date(article.createdAt).toLocaleDateString()
+              : new Date().toLocaleDateString(),
+          }))
+        );
+      } catch (error) {
+        alert('Failed to load articles');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticles();
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -41,48 +69,58 @@ const NewspaperSection = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newArticle.image) {
       alert('Please upload an image');
       return;
     }
-
-    setArticles(prev => [{
-      ...newArticle,
-      id: Date.now()
-    }, ...prev]);
-
-    setNewArticle({
-      headline: '',
-      content: '',
-      image: null,
-      imagePreview: '',
-      date: new Date().toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })
-    });
+    if (!newArticle.headline || !newArticle.content) {
+      alert('Headline and story are required');
+      return;
+    }
+    try {
+      // Submit to backend
+      const created = await createNewsArticle({
+        headline: newArticle.headline,
+        story: newArticle.content,
+        image: newArticle.image,
+      });
+      setArticles(prev => [{
+        id: created.id || created._id,
+        headline: created.headline,
+        content: created.story,
+        imageUrl: created.imagePath ? `http://localhost:3001${created.imagePath}` : null,
+        date: created.createdAt
+          ? new Date(created.createdAt).toLocaleDateString()
+          : new Date().toLocaleDateString(),
+      }, ...prev]);
+      setNewArticle({
+        headline: '',
+        content: '',
+        image: null,
+        imagePreview: '',
+        date: new Date().toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })
+      });
+    } catch (error) {
+      alert('Failed to publish article');
+    }
   };
 
   return (
     <div className="text-white bg-darkBlue min-h-screen">
-      {/* Fixed Header */}
+      {/* Header */}
       <header className="fixed inset-x-0 top-0 z-50 bg-darkBlue bg-opacity-90 backdrop-blur-sm">
-        <nav
-          className="flex items-center justify-between p-2 lg:px-5"
-          aria-label="Global"
-        >
+        <nav className="flex items-center justify-between p-2 lg:px-5" aria-label="Global">
           <div className="flex lg:flex-1">
             <a href="/" className="-m-1.5 p-1.5">
               <span className="sr-only">Lost and Found System</span>
-              <img
-                className="w-auto h-16 lg:h-20"
-                src={logo}
-                alt="Lost and Found System Logo"
-              />
+              <img className="w-auto h-16 lg:h-20" src={logo} alt="Lost and Found System Logo" />
             </a>
           </div>
           <div className="flex lg:hidden">
@@ -92,43 +130,15 @@ const NewspaperSection = () => {
               onClick={() => setMobileMenuOpen(true)}
             >
               <span className="sr-only">Open main menu</span>
-              <svg
-                className="size-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                aria-hidden="true"
-                data-slot="icon"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                />
+              <svg className="size-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
           </div>
           <div className="hidden lg:flex lg:gap-x-28">
-            <a
-              href="/"
-              className="text-lg font-semibold text-gray-300 hover:text-white"
-            >
-             Features
-            </a>
-            <a
-              href="/comunity"
-              className="text-lg font-semibold text-gray-300 hover:text-white"
-            >
-              Community
-            </a>
-            
-            <a
-              href="/news"
-              className="text-lg font-semibold text-gray-300 hover:text-white"
-            >
-              News
-            </a>
+            <a href="/" className="text-lg font-semibold text-gray-300 hover:text-white">Features</a>
+            <a href="/comunity" className="text-lg font-semibold text-gray-300 hover:text-white">Community</a>
+            <a href="/news" className="text-lg font-semibold text-gray-300 hover:text-white">News</a>
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
             <button
@@ -143,8 +153,8 @@ const NewspaperSection = () => {
 
       {/* Main Content */}
       <main className="pt-32 pb-16 px-4">
-        {/* Newspaper Header */}
         <div className="max-w-6xl mx-auto">
+          {/* Newspaper Header */}
           <header className="border-b-4 border-white mb-6 pb-4">
             <h1 className="text-5xl font-bold text-center mb-2 tracking-tight text-white">The Reclaim Found</h1>
             <div className="flex justify-between text-sm italic text-gray-300">
@@ -157,7 +167,6 @@ const NewspaperSection = () => {
           {/* Upload Section */}
           <div className="bg-gray-800 p-6 mb-8 shadow-lg border border-gray-600 rounded-lg">
             <h2 className="text-2xl font-bold mb-4 border-b-2 border-white pb-2 text-white">Submit Your News</h2>
-            
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label className="block text-lg mb-2 text-white">Headline</label>
@@ -169,7 +178,6 @@ const NewspaperSection = () => {
                   placeholder="Enter headline..."
                 />
               </div>
-
               <div className="mb-4">
                 <label className="block text-lg mb-2 text-white">Story</label>
                 <textarea
@@ -180,7 +188,6 @@ const NewspaperSection = () => {
                   placeholder="Write your story here..."
                 ></textarea>
               </div>
-
               <div className="mb-6">
                 <label className="block text-lg mb-2 text-white">Featured Image</label>
                 {!newArticle.imagePreview ? (
@@ -200,7 +207,7 @@ const NewspaperSection = () => {
                   <div className="relative">
                     <img 
                       src={newArticle.imagePreview} 
-                      alt="Preview" 
+                      alt="Preview"
                       className="w-full h-64 object-cover border border-gray-500 rounded-lg"
                     />
                     <button
@@ -213,7 +220,6 @@ const NewspaperSection = () => {
                   </div>
                 )}
               </div>
-
               <button
                 type="submit"
                 className="bg-white text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-gray-200 transition rounded-lg"
@@ -226,8 +232,11 @@ const NewspaperSection = () => {
           {/* Newspaper Articles */}
           <div className="space-y-8">
             <h2 className="text-3xl font-bold border-b-2 border-white pb-2 text-white">Latest News</h2>
-            
-            {articles.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12 italic text-gray-400">
+                Loading articles...
+              </div>
+            ) : articles.length === 0 ? (
               <div className="text-center py-12 italic text-gray-400">
                 No articles yet. Be the first to publish!
               </div>
@@ -243,9 +252,9 @@ const NewspaperSection = () => {
                       </p>
                     </div>
                     <div className="md:col-span-1">
-                      {article.imagePreview && (
+                      {article.imageUrl && (
                         <img 
-                          src={article.imagePreview} 
+                          src={article.imageUrl} 
                           alt="Article visual" 
                           className="w-full h-64 object-cover border border-gray-600 shadow-md rounded-lg"
                         />
