@@ -1,2 +1,67 @@
-node_modules
+# Virtual Environment
+venv/
+myenv/
+env/
+.Python
+**/venv/**
+**/myenv/**
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ML Models
+*.pth
+backend/src/modules/best_model.pth
+ml-server/model/best_model.pth
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+
+# Virtual Environment
+venv/
+myenv/
+*/venv/
+*/myenv/
 .qodo

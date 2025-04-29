@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/UI/Footer";
 import Swal from "sweetalert2";
+import { register } from "../../api/auth";
+import PasswordInput from '../../components/UI/PasswordInput';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -9,12 +11,14 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    mobileNumber: "",
   });
   const [errors, setErrors] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    mobileNumber: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -31,6 +35,10 @@ const Register = () => {
         if (!value) error = "Email is required";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
           error = "Invalid email address";
+        break;
+      case "mobileNumber":
+        if (value && !/^[0-9]{10}$/.test(value))
+          error = "Please enter a valid 10-digit mobile number";
         break;
       case "password":
         if (!value) error = "Password is required";
@@ -75,6 +83,7 @@ const Register = () => {
       email: validateField("email", formData.email),
       password: validateField("password", formData.password),
       confirmPassword: validateField("confirmPassword", formData.confirmPassword),
+      mobileNumber: validateField("mobileNumber", formData.mobileNumber),
     };
 
     setErrors(newErrors);
@@ -98,29 +107,34 @@ const Register = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Send registration data to the backend
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        mobileNumber: formData.mobileNumber || undefined
+      };
+      
+      console.log('Sending registration data:', userData);
+      
+      const response = await register(userData);
       
       await Swal.fire({
         title: "Registration Successful!",
-        text: "Your account has been created successfully (demo).",
+        text: response.message || "Your account has been created successfully.",
         icon: "success",
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true,
       });
 
-      // Reset form after successful submission
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
+      // Navigate to login page after successful registration
+      navigate("/login");
     } catch (err) {
+      console.error("Registration error:", err);
       await Swal.fire({
-        title: "Error",
-        text: "An unexpected error occurred.",
+        title: "Registration Failed",
+        text: err.response?.data?.message || "An error occurred during registration.",
         icon: "error",
         confirmButtonText: "OK",
       });
@@ -225,75 +239,56 @@ const Register = () => {
 
               <div>
                 <label
-                  htmlFor="password"
+                  htmlFor="mobileNumber"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Password
+                  Mobile Number (Optional)
                 </label>
                 <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
+                  id="mobileNumber"
+                  name="mobileNumber"
+                  type="tel"
+                  autoComplete="tel"
+                  value={formData.mobileNumber}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`block w-full px-4 py-3 text-base rounded-md shadow-sm ${
-                    errors.password
-                      ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                  className={`block w-full px-4 py-2 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                    errors.mobileNumber
+                      ? "border-red-300"
+                      : "border-gray-300"
                   }`}
-                  placeholder="••••••••"
+                  placeholder="Enter your mobile number (optional)"
                 />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                {errors.mobileNumber && (
+                  <p className="mt-1 text-sm text-red-600">{errors.mobileNumber}</p>
                 )}
-                <div className="mt-2 text-xs text-gray-500">
-                  <p>Password must contain:</p>
-                  <ul className="list-disc list-inside">
-                    <li className={formData.password.length >= 8 ? "text-green-500" : ""}>
-                      At least 8 characters
-                    </li>
-                    <li className={/[A-Z]/.test(formData.password) ? "text-green-500" : ""}>
-                      One uppercase letter
-                    </li>
-                    <li className={/[0-9]/.test(formData.password) ? "text-green-500" : ""}>
-                      One number
-                    </li>
-                    <li className={/[!@#$%^&*]/.test(formData.password) ? "text-green-500" : ""}>
-                      One special character
-                    </li>
-                  </ul>
-                </div>
               </div>
 
               <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   autoComplete="new-password"
                   required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  error={errors.password}
+                />
+              </div>
+
+              <div>
+                <PasswordInput
+                  id="confirmPassword"
+                  name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`block w-full px-4 py-3 text-base rounded-md shadow-sm ${
-                    errors.confirmPassword
-                      ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                  }`}
-                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  required
+                  label="Confirm Password"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  error={errors.confirmPassword}
                 />
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-                )}
               </div>
 
               <div className="flex items-center">
