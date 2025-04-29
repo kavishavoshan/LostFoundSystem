@@ -30,7 +30,11 @@ export class LostItemsService {
   }
 
   async findByUser(userId: string): Promise<LostItem[]> {
-    return this.lostItemModel.find({ userId }).exec();
+    const user = await this.lostItemModel.find({ userId }).exec();
+    if (!user) {
+      throw new NotFoundException(`Lost item with userId ${userId} not found`);
+    }
+    return user;
   }
 
   async update(id: string, updateLostItemDto: UpdateLostItemDto): Promise<LostItem> {
