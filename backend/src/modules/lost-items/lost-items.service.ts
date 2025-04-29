@@ -43,25 +43,14 @@ export class LostItemsService {
     return updatedLostItem;
   }
 
-  async remove(id: string): Promise<LostItem> {
+  async remove(id: string): Promise<{ message: string; id: string }> {
     const deletedLostItem = await this.lostItemModel.findByIdAndDelete(id).exec();
     if (!deletedLostItem) {
       throw new NotFoundException(`Lost item with ID ${id} not found`);
     }
-    return deletedLostItem;
+    return {
+      message: `Lost item with ID ${id} deleted successfully`,
+      id: deletedLostItem.id,
+    };
   }
-
-  // async update(id: number, updateLostItemDto: UpdateLostItemDto): Promise<LostItem> {
-  //   const item = await this.lostItemRepository.findOneBy({ id });
-  //   if (!item) throw new Error(`Lost item with id ${id} not found`);
-  
-  //   const updated = Object.assign(item, updateLostItemDto);
-  //   return this.lostItemRepository.save(updated);
-  // }
-  
-  // async remove(id: number): Promise<{ message: string }> {
-  //   const result = await this.lostItemRepository.delete(id);
-  //   if (result.affected === 0) throw new Error(`Lost item with id ${id} not found`);
-  //   return { message: `Lost item with id ${id} deleted successfully` };
-  // }
 }
