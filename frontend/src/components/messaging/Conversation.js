@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getMessages, sendMessage, deleteMessage, markMessageAsRead } from '../../api/messages';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
-const TEST_USER_ID = 1; // Using the first test user's ID
 const API_URL = 'http://localhost:3001';
 
 const Conversation = ({ userId, socket }) => {
+  const { user } = useAuth(); // Get current user from AuthContext
+  const currentUserId = user?._id;
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -26,16 +28,21 @@ const Conversation = ({ userId, socket }) => {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        const fetchedMessages = await getMessages(userId);
+        if (!currentUserId || !userId) {
+          setError('User information is missing');
+          setLoading(false);
+          return;
+        }
+        const fetchedMessages = await getMessages(userId, currentUserId);
         setMessages(fetchedMessages);
         
         // Mark unread messages as read
         const unreadMessages = fetchedMessages.filter(
-          msg => msg.senderId !== TEST_USER_ID && !msg.isRead
+          msg => msg.senderId !== currentUserId && !msg.isRead
         );
         
         for (const msg of unreadMessages) {
-          await markMessageAsRead(msg.id);
+          await markMessageAsRead(msg.id, currentUserId);
         }
         
         setError(null);
@@ -54,8 +61,8 @@ const Conversation = ({ userId, socket }) => {
       socket.on('newMessage', (message) => {
         if (message.senderId === userId || message.receiverId === userId) {
           setMessages((prevMessages) => [...prevMessages, message]);
-          if (message.senderId !== TEST_USER_ID) {
-            markMessageAsRead(message.id);
+          if (message.senderId !== currentUserId) {
+            markMessageAsRead(message.id, currentUserId);
           }
           scrollToBottom();
         }
@@ -92,7 +99,7 @@ const Conversation = ({ userId, socket }) => {
         socket.off('messageRead');
       }
     };
-  }, [userId, socket]);
+  }, [userId, socket, currentUserId]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -116,7 +123,11 @@ const Conversation = ({ userId, socket }) => {
         attachmentUrl = uploadResponse.data.url;
       }
 
-      const sentMessage = await sendMessage(userId, messageContent, attachmentUrl);
+      if (!currentUserId) {
+        setError('User information is missing');
+        return;
+      }
+      const sentMessage = await sendMessage(currentUserId, userId, messageContent, attachmentUrl);
       setMessages(prev => [...prev, sentMessage]);
       setNewMessage('');
       setSelectedFile(null);
@@ -130,7 +141,7 @@ const Conversation = ({ userId, socket }) => {
 
   const handleDeleteMessage = async (messageId) => {
     try {
-      await deleteMessage(messageId);
+      await deleteMessage(messageId, currentUserId);
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
     } catch (err) {
       console.error('Error deleting message:', err);
@@ -142,7 +153,7 @@ const Conversation = ({ userId, socket }) => {
     try {
       const response = await axios.put(`${API_URL}/messages/${messageId}`, {
         content,
-        userId: TEST_USER_ID,
+        userId: currentUserId,
       });
       
       setMessages((prevMessages) =>
@@ -202,12 +213,12 @@ const Conversation = ({ userId, socket }) => {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.senderId === TEST_USER_ID ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${message.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
           >
             <div className="group relative">
               <div
                 className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-                  message.senderId === TEST_USER_ID
+                  message.senderId === currentUserId
                     ? 'bg-blue-500 text-white ml-12'
                     : 'bg-gray-100 text-gray-900 mr-12'
                 }`}
@@ -259,7 +270,7 @@ const Conversation = ({ userId, socket }) => {
                       </div>
                     )}
                     <div className={`flex items-center justify-end mt-1 text-xs ${
-                      message.senderId === TEST_USER_ID ? 'text-blue-100' : 'text-gray-500'
+                      message.senderId === currentUserId ? 'text-blue-100' : 'text-gray-500'
                     }`}>
                       {format(new Date(message.createdAt), 'h:mm a')}
                     </div>
@@ -267,7 +278,7 @@ const Conversation = ({ userId, socket }) => {
                 )}
               </div>
               
-              {message.senderId === TEST_USER_ID && (
+              {message.senderId === currentUserId && (
                 <div className="absolute top-0 right-0 hidden group-hover:flex items-center space-x-1 -mr-20 bg-white rounded-lg shadow-md px-2 py-1">
                   <button
                     onClick={() => {
@@ -340,4 +351,4 @@ const Conversation = ({ userId, socket }) => {
   );
 };
 
-export default Conversation; 
+export default Conversation;

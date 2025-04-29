@@ -67,17 +67,18 @@ const UserSearch = ({ onSelectUser, onClose }) => {
               <div className="space-y-2">
                 {users.map((user) => (
                   <button
-                    key={user.id}
+                    key={user._id}
                     onClick={() => {
-                      onSelectUser(user.id);
+                      // When selecting a user, also create an initial message if needed
+                      onSelectUser(user._id);
                       onClose();
                     }}
                     className="w-full p-3 flex items-center space-x-3 hover:bg-gray-50 rounded-lg transition-colors"
                   >
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                       <span className="text-blue-600 font-medium">
-                        {user.firstName[0]}
-                        {user.lastName[0]}
+                        {user.firstName ? user.firstName[0] : '?'}
+                        {user.lastName ? user.lastName[0] : '?'}
                       </span>
                     </div>
                     <div className="flex-1 text-left">
@@ -101,4 +102,4 @@ const UserSearch = ({ onSelectUser, onClose }) => {
   );
 };
 
-export default UserSearch; 
+export default UserSearch;

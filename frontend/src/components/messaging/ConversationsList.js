@@ -1,66 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { getConversations } from '../../api/messages';
 import { format } from 'date-fns';
+import { useAuth } from '../../context/AuthContext';
 
-const TEST_CONVERSATIONS = [
-  {
-    otherUser: {
-      id: 2,
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane@example.com"
-    },
-    lastMessage: {
-      content: "Hello, how are you?",
-      createdAt: new Date().toISOString(),
-      senderId: 2
-    },
-    unreadCount: 1
-  },
-  {
-    otherUser: {
-      id: 3,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john@example.com"
-    },
-    lastMessage: {
-      content: "When is the meeting?",
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      senderId: 1
-    },
-    unreadCount: 0
-  }
-];
+
 
 const ConversationsList = ({ onSelectUser, selectedUserId }) => {
+  const { user } = useAuth(); // Get user from AuthContext
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchConversations();
-  }, []);
+    if (user?._id) { // Ensure user and user._id exist
+      fetchConversations(user._id);
+    }
+  }, [user]); // Re-fetch if user changes
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (userId) => {
     try {
       setLoading(true);
-      // First try to get real conversations
-      const data = await getConversations();
-      
-      // If no real conversations, use test data
-      if (!data || data.length === 0) {
-        setConversations(TEST_CONVERSATIONS);
-      } else {
-        setConversations(data);
-      }
-      
+      const data = await getConversations(userId); // Pass userId to API call
+      setConversations(data);
       setError(null);
     } catch (error) {
       console.error('Error fetching conversations:', error);
-      // On error, fall back to test data
-      setConversations(TEST_CONVERSATIONS);
-      setError(null);
+      setError('Failed to load conversations.');
+      setConversations([]); // Clear conversations on error
     } finally {
       setLoading(false);
     }
@@ -137,4 +103,4 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
   );
 };
 
-export default ConversationsList; 
+export default ConversationsList;

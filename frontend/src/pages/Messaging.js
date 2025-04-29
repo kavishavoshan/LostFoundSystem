@@ -3,6 +3,7 @@ import ConversationsList from '../components/messaging/ConversationsList';
 import Conversation from '../components/messaging/Conversation';
 import UserSearch from '../components/messaging/UserSearch';
 import { initializeSocket } from '../api/messages';
+import { useAuth } from '../context/AuthContext';
 
 const Messaging = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -10,8 +11,10 @@ const Messaging = () => {
   const [showUserSearch, setShowUserSearch] = useState(false);
 
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = initializeSocket();
+    // Get token from localStorage for socket authentication
+    const token = localStorage.getItem('token');
+    // Initialize socket connection with auth token
+    const newSocket = initializeSocket(token);
     setSocket(newSocket);
 
     return () => {
@@ -20,6 +23,29 @@ const Messaging = () => {
       }
     };
   }, []);
+
+
+  // Import useAuth at the top level of the component
+  const { user } = useAuth();
+  
+  // Define the handleSelectUser function at the component level
+  const handleSelectUser = async (userId) => {
+    // Import the initializeConversation function
+    const { initializeConversation } = require('../api/messages');
+    
+    // Initialize conversation when a user is selected
+    if (user?._id && userId) {
+      try {
+        // Create initial conversation message
+        await initializeConversation(user._id, userId);
+      } catch (error) {
+        console.error('Error initializing conversation:', error);
+      }
+    }
+    
+    setSelectedUserId(userId);
+    setShowUserSearch(false);
+  };
 
   return (
     <div className="h-screen flex flex-col">
@@ -64,10 +90,7 @@ const Messaging = () => {
       </div>
       {showUserSearch && (
         <UserSearch
-          onSelectUser={(userId) => {
-            setSelectedUserId(userId);
-            setShowUserSearch(false);
-          }}
+          onSelectUser={handleSelectUser}
           onClose={() => setShowUserSearch(false)}
         />
       )}
@@ -75,4 +98,4 @@ const Messaging = () => {
   );
 };
 
-export default Messaging; 
+export default Messaging;
