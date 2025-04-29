@@ -24,7 +24,7 @@ export class LostItemsService {
   async findOne(id: string): Promise<LostItem> {
     const lostItem = await this.lostItemModel.findById(id).exec();
     if (!lostItem) {
-      throw new NotFoundException(`Lost item with ID ${id} not found`);
+      throw new NotFoundException(`Lost item with Id ${id} not found`);
     }
     return lostItem;
   }
@@ -38,7 +38,7 @@ export class LostItemsService {
       .findByIdAndUpdate(id, updateLostItemDto, { new: true })
       .exec();
     if (!updatedLostItem) {
-      throw new NotFoundException(`Lost item with ID ${id} not found`);
+      throw new NotFoundException(`Lost item with Id ${id} not found`);
     }
     return updatedLostItem;
   }
