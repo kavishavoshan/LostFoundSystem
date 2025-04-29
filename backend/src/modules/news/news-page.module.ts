@@ -1,22 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { NewsPageController } from './news-page.controller';
+import { NewsPageService } from './news-page.service';
+import { NewsPage } from './news-page.entity';
 
-@Entity()
-export class NewsPage {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column()
-  headline: string;
-
-  @Column('text')
-  story: string;
-
-  @Column({ nullable: true })
-  imagePath: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Column({ default: false })
-  published: boolean;
-}
+@Module({
+  imports: [TypeOrmModule.forFeature([NewsPage])],
+  controllers: [NewsPageController],
+  providers: [NewsPageService],
+})
+export class NewsPageModule {}
