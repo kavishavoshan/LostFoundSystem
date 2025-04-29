@@ -14,7 +14,9 @@ export class NewsPageController {
     @Body() createNewsPageDto: CreateNewsPageDto,
     @UploadedFile() image?: Express.Multer.File,
   ): Promise<GetNewsPageDto> {
-    const imagePath = image ? `/uploads/${image.filename}` : undefined;
+    // Check if the file exists and has filename
+    const imagePath = image?.filename ? `/uploads/${image.filename}` : undefined;
+    console.log('Image path:', imagePath); // Add logging
     const newsPage = await this.newsPageService.create(createNewsPageDto, imagePath);
     return new GetNewsPageDto(newsPage);
   }
@@ -27,7 +29,7 @@ export class NewsPageController {
 
   @Post(':id/publish')
   async publish(@Param('id') id: string): Promise<GetNewsPageDto> {
-    const newsPage = await this.newsPageService.publish(Number(id));
+    const newsPage = await this.newsPageService.publish(id);
     return new GetNewsPageDto(newsPage);
   }
 }

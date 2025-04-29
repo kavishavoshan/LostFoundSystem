@@ -1,37 +1,46 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { NewsPage } from './news-page.entity';
 import { CreateNewsPageDto } from './dto/news-page.create-news-page';
 
 @Injectable()
 export class NewsPageService {
   constructor(
-    @InjectRepository(NewsPage)
-    private readonly newsPageRepository: Repository<NewsPage>,
+    @InjectModel(NewsPage.name)
+    private readonly newsPageModel: Model<NewsPage>,
   ) {}
 
   async create(createNewsPageDto: CreateNewsPageDto, imagePath?: string): Promise<NewsPage> {
-    const newsPage = new NewsPage();
-    newsPage.headline = createNewsPageDto.headline;
-    newsPage.story = createNewsPageDto.story;
-    if (imagePath) {
-      newsPage.imagePath = imagePath;
+    try {
+      console.log('Creating news page with:', { ...createNewsPageDto, imagePath });
+      const newsPage = new this.newsPageModel({
+        headline: createNewsPageDto.headline,
+        story: createNewsPageDto.story,
+        imagePath,
+      });
+      return await newsPage.save();
+    } catch (error) {
+      console.error('Error creating news page:', error);
+      throw error;
     }
-
-    return this.newsPageRepository.save(newsPage);
   }
 
   async findAll(): Promise<NewsPage[]> {
-    return this.newsPageRepository.find();
+    return this.newsPageModel.find().sort({ createdAt: -1 }).exec();
   }
 
-  async publish(id: number): Promise<NewsPage> {
-    const item = await this.newsPageRepository.findOne({ where: { id } });
-    if (!item) {
-      throw new Error('News page not found');
+  async publish(id: string): Promise<NewsPage> {
+    const updatedNewsPage = await this.newsPageModel.findByIdAndUpdate(
+      id,
+      { published: true },
+      { new: true },
+    ).exec();
+
+    if (!updatedNewsPage) {
+      throw new NotFoundException(`NewsPage with id ${id} not found`);
     }
-    item.published = true;
-    return this.newsPageRepository.save(item);
+
+    return updatedNewsPage;
   }
 }

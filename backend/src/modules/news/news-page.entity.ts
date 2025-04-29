@@ -1,22 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
-@Entity()
-export class NewsPage {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column()
+@Schema({ timestamps: true })
+export class NewsPage extends Document {
+  @Prop({ required: true })
   headline: string;
 
-  @Column('text')
+  @Prop({ required: true })
   story: string;
 
-  @Column({ nullable: true })
-  imagePath: string;
+  @Prop()
+  imagePath?: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Column({ default: false })
+  @Prop({ default: false })
   published: boolean;
+  
+  createdAt: Date;
 }
+
+export const NewsPageSchema = SchemaFactory.createForClass(NewsPage);

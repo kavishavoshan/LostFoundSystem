@@ -9,7 +9,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { LostItemsModule } from './modules/lost-items/lostitems.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { FoundItemsModule } from './modules/found-items/found-items.module';
-import { NewsPage } from './modules/news/news-page.entity';
 import { NewsPageModule } from './modules/news/news-page.module';
 
 @Module({

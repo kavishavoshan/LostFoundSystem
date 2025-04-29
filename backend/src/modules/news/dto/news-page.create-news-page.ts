@@ -3,3 +3,4 @@ export class CreateNewsPageDto {
     story: string;
     image?: Express.Multer.File;
   }
+  
