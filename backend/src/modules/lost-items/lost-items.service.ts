@@ -24,17 +24,13 @@ export class LostItemsService {
   async findOne(id: string): Promise<LostItem> {
     const lostItem = await this.lostItemModel.findById(id).exec();
     if (!lostItem) {
-      throw new NotFoundException(`Lost item with ID ${id} not found`);
+      throw new NotFoundException(`Lost item with Id ${id} not found`);
     }
     return lostItem;
   }
 
   async findByUser(userId: string): Promise<LostItem[]> {
-    const user = await this.lostItemModel.find({ userId }).exec();
-    if (!user) {
-      throw new NotFoundException(`Lost item with userId ${userId} not found`);
-    }
-    return user;
+    return this.lostItemModel.find({ userId }).exec();
   }
 
   async update(id: string, updateLostItemDto: UpdateLostItemDto): Promise<LostItem> {
@@ -42,7 +38,7 @@ export class LostItemsService {
       .findByIdAndUpdate(id, updateLostItemDto, { new: true })
       .exec();
     if (!updatedLostItem) {
-      throw new NotFoundException(`Lost item with ID ${id} not found`);
+      throw new NotFoundException(`Lost item with Id ${id} not found`);
     }
     return updatedLostItem;
   }
