@@ -13,6 +13,7 @@ const Header = () => {
     { name: 'Lost & Found', href: '/itemDashboard' },
     { name: 'Browse Items', href: '/browseitems' },
     { name: 'About Us', href: '/about' },
+    { name: 'news', href: '/news' },
     { name: 'Community', href: '/comunity' },
   ];
 
