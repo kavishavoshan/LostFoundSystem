@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateMessageDto {
   @IsNotEmpty()
@@ -6,10 +6,10 @@ export class CreateMessageDto {
   content: string;
 
   @IsNotEmpty()
-  @IsNumber()
-  receiverId: number;
+  @IsString()
+  receiverId: string;
 
-  @IsNotEmpty()
-  @IsNumber()
-  senderId: number;
-} 
+  @IsOptional()
+  @IsString()
+  senderId?: string;
+}

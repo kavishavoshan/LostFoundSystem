@@ -113,4 +113,18 @@ export class UserService {
     }
     return updatedUser;
   }
+
+  async searchUsers(query: string): Promise<UserDocument[]> {
+    if (!query) {
+      return [];
+    }
+    const searchRegex = new RegExp(query, 'i'); // Case-insensitive search
+    return this.userModel.find({
+      $or: [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex },
+      ],
+    }).exec();
+  }
 }

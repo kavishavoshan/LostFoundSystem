@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { searchUsers } from '../../api/messages';
+// Removed useAuth import as currentUser is now passed as a prop
 
-const UserSearch = ({ onSelectUser, onClose }) => {
+const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
+  // Removed: const { user: currentUser } = useAuth(); - Now using the prop
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -67,17 +69,27 @@ const UserSearch = ({ onSelectUser, onClose }) => {
               <div className="space-y-2">
                 {users.map((user) => (
                   <button
-                    key={user.id}
+                    key={user._id}
                     onClick={() => {
-                      onSelectUser(user.id);
-                      onClose();
+                      // When selecting a user, also create an initial message if needed
+                      // Handle both _id and id formats from the backend
+                      const userId = user && (user._id || user.id);
+                      if (userId) {
+                        console.log('Selected user:', user);
+                        console.log('Selected user ID:', userId);
+                        console.log('Current user (from prop):', currentUser);
+                        onSelectUser(userId);
+                        onClose();
+                      } else {
+                        console.error('Invalid user or missing ID:', user);
+                      }
                     }}
                     className="w-full p-3 flex items-center space-x-3 hover:bg-gray-50 rounded-lg transition-colors"
                   >
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                       <span className="text-blue-600 font-medium">
-                        {user.firstName[0]}
-                        {user.lastName[0]}
+                        {user.firstName ? user.firstName[0] : '?'}
+                        {user.lastName ? user.lastName[0] : '?'}
                       </span>
                     </div>
                     <div className="flex-1 text-left">
@@ -101,4 +113,4 @@ const UserSearch = ({ onSelectUser, onClose }) => {
   );
 };
 
-export default UserSearch; 
+export default UserSearch;

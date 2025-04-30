@@ -3,7 +3,11 @@ import { IsEmail, IsNotEmpty, IsString, MinLength, Matches, IsOptional } from 'c
 export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  firstName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  lastName: string;
 
   @IsNotEmpty()
   @IsEmail()
