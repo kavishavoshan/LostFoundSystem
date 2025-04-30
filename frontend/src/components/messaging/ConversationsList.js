@@ -12,8 +12,10 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (user?._id) { // Ensure user and user._id exist
-      fetchConversations(user._id);
+    // Handle both _id and id formats from the backend
+    const userId = user && (user._id || user.id);
+    if (userId) { // Ensure user and userId exist
+      fetchConversations(userId);
     }
   }, [user]); // Re-fetch if user changes
 

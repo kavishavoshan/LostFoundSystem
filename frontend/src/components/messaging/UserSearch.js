@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { searchUsers } from '../../api/messages';
+// Removed useAuth import as currentUser is now passed as a prop
 
-const UserSearch = ({ onSelectUser, onClose }) => {
+const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
+  // Removed: const { user: currentUser } = useAuth(); - Now using the prop
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -70,8 +72,17 @@ const UserSearch = ({ onSelectUser, onClose }) => {
                     key={user._id}
                     onClick={() => {
                       // When selecting a user, also create an initial message if needed
-                      onSelectUser(user._id);
-                      onClose();
+                      // Handle both _id and id formats from the backend
+                      const userId = user && (user._id || user.id);
+                      if (userId) {
+                        console.log('Selected user:', user);
+                        console.log('Selected user ID:', userId);
+                        console.log('Current user (from prop):', currentUser);
+                        onSelectUser(userId);
+                        onClose();
+                      } else {
+                        console.error('Invalid user or missing ID:', user);
+                      }
                     }}
                     className="w-full p-3 flex items-center space-x-3 hover:bg-gray-50 rounded-lg transition-colors"
                   >

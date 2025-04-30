@@ -20,11 +20,29 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      // Try to get user from localStorage first
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (parseError) {
+          console.error('Error parsing stored user data:', parseError);
+          localStorage.removeItem('user');
+        }
+      }
+      
+      // Then verify with server
       const response = await axios.get('http://localhost:3001/auth/me');
       setUser(response.data);
       setIsAuthenticated(true);
+      // Update stored user data
+      localStorage.setItem('user', JSON.stringify(response.data));
     } catch (error) {
+      console.error('Auth verification failed:', error);
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       delete axios.defaults.headers.common['Authorization'];
       setUser(null);
       setIsAuthenticated(false);
@@ -39,44 +57,65 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      setIsAuthenticated(true);
-      return true;
+      // Handle both token and accessToken formats from the backend
+      const token = response.data.token || response.data.accessToken;
+      const userData = response.data.user;
+      
+      if (token) {
+        localStorage.setItem('token', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setUser(userData);
+        setIsAuthenticated(true);
+        // Also store user in localStorage for persistence
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        return true;
+      } else {
+        throw new Error('No token received from server');
+      }
     } catch (error) {
+      console.error('Login error in AuthContext:', error);
       throw error;
     }
   };
 
-  const register = async (userData) => {
+  const register = async (userRegistrationData) => {
     try {
-      const response = await axios.post('http://localhost:3001/auth/register', userData);
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      setIsAuthenticated(true);
-      return true;
+      const response = await axios.post('http://localhost:3001/auth/register', userRegistrationData);
+      // Handle both token and accessToken formats from the backend
+      const token = response.data.token || response.data.accessToken;
+      const userData = response.data.user;
+      
+      if (token) {
+        localStorage.setItem('token', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setUser(userData);
+        setIsAuthenticated(true);
+        // Also store user in localStorage for persistence
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        return true;
+      } else {
+        throw new Error('No token received from server');
+      }
     } catch (error) {
+      console.error('Registration error in AuthContext:', error);
       throw error;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     setIsAuthenticated(false);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, register, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

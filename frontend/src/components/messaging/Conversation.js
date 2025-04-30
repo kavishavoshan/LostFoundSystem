@@ -8,7 +8,16 @@ const API_URL = 'http://localhost:3001';
 
 const Conversation = ({ userId, socket }) => {
   const { user } = useAuth(); // Get current user from AuthContext
-  const currentUserId = user?._id;
+
+  // ADDED: Log the raw user object from context
+  console.log('[Conversation Render] Raw user object from useAuth:', user);
+
+  // REMOVED: currentUserId derivation moved inside useEffect
+
+  // ADD LOGS HERE (outside useEffect)
+  console.log('[Conversation Render] Props:', { userId, socket });
+  console.log('[Conversation Render] Auth user state:', user);
+  // console.log('[Conversation Render] Derived currentUserId:', currentUserId); // Removed as it's derived later
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -20,86 +29,158 @@ const Conversation = ({ userId, socket }) => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Derive currentUserId outside useEffect, but ensure it updates if user changes
+  const currentUserId = user && (user._id || user.id);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Effect for fetching messages when userId or currentUser changes
   useEffect(() => {
     const fetchMessages = async () => {
+      console.log('[Conversation fetchEffect] Running fetch effect. Props:', { userId });
+      console.log('[Conversation fetchEffect] Current auth user state:', user);
+      console.log('[Conversation fetchEffect] Derived currentUserId:', currentUserId);
+
+      // Ensure both IDs are present before attempting to fetch
+      if (!currentUserId || !userId) {
+        console.warn('[Conversation fetchEffect] Skipping fetch: Missing user information.', { currentUserId, userId });
+        setMessages([]); // Clear messages if IDs are missing
+        if (!loading) setLoading(true); // Reset loading state if needed
+        setError(null); // Clear any previous error
+        return;
+      }
+
+      let fetchAttempted = false;
       try {
         setLoading(true);
-        if (!currentUserId || !userId) {
-          setError('User information is missing');
-          setLoading(false);
-          return;
-        }
+        fetchAttempted = true;
+        console.log('[Conversation fetchEffect] Proceeding to fetch messages between', currentUserId, 'and', userId);
         const fetchedMessages = await getMessages(userId, currentUserId);
+        console.log('[Conversation fetchEffect] Fetched messages:', fetchedMessages);
         setMessages(fetchedMessages);
-        
-        // Mark unread messages as read
+
+        // Mark unread messages as read (consider moving this logic if needed)
         const unreadMessages = fetchedMessages.filter(
           msg => msg.senderId !== currentUserId && !msg.isRead
         );
-        
         for (const msg of unreadMessages) {
-          await markMessageAsRead(msg.id, currentUserId);
+          // Use await, but don't block UI updates if marking fails
+          markMessageAsRead(msg.id, currentUserId).catch(err => {
+            console.warn(`Failed to mark message ${msg.id} as read:`, err);
+          });
         }
-        
+
         setError(null);
       } catch (err) {
-        setError('Failed to load messages');
-        console.error('Error fetching messages:', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to load messages';
+        setError(`Error: ${errorMessage}`);
+        console.error('[Conversation fetchEffect] Error fetching messages:', err);
+        setMessages([]); // Clear messages on error
       } finally {
-        setLoading(false);
+        if (fetchAttempted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchMessages();
-    scrollToBottom();
+  }, [userId, user]); // Depend only on userId and user for fetching
 
-    if (socket) {
-      socket.on('newMessage', (message) => {
-        if (message.senderId === userId || message.receiverId === userId) {
-          setMessages((prevMessages) => [...prevMessages, message]);
-          if (message.senderId !== currentUserId) {
-            markMessageAsRead(message.id, currentUserId);
+  // Effect for scrolling when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages]); // Depend only on messages for scrolling
+
+  // Effect for setting up socket listeners
+  useEffect(() => {
+    if (!socket || !currentUserId || !userId) {
+      // Don't set up listeners if socket or necessary IDs aren't ready
+      return;
+    }
+
+    console.log('[Conversation socketEffect] Setting up socket listeners for user:', userId);
+
+    const handleNewMessage = (message) => {
+      // Check if the message belongs to the current conversation
+      const isRelevant = (message.senderId === userId && message.receiverId === currentUserId) ||
+                         (message.senderId === currentUserId && message.receiverId === userId);
+
+      if (isRelevant) {
+        console.log('[Socket] Received relevant newMessage:', message);
+        setMessages((prevMessages) => {
+          // Avoid adding duplicate messages if already present
+          if (prevMessages.some(msg => msg.id === message.id)) {
+            return prevMessages;
           }
-          scrollToBottom();
+          return [...prevMessages, message];
+        });
+        // Mark as read if received from the other user
+        if (message.senderId === userId) {
+          markMessageAsRead(message.id, currentUserId).catch(err => {
+            console.warn(`[Socket] Failed to mark message ${message.id} as read:`, err);
+          });
         }
-      });
+      }
+    };
 
-      socket.on('messageDeleted', (messageId) => {
-        setMessages((prevMessages) => 
-          prevMessages.filter((msg) => msg.id !== messageId)
-        );
-      });
+    const handleMessageDeleted = (deletedInfo) => {
+      // Ensure deletedInfo contains the messageId and potentially the conversation context
+      const messageId = deletedInfo.messageId;
+      console.log('[Socket] Received messageDeleted:', messageId);
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg.id !== messageId)
+      );
+    };
 
-      socket.on('messageEdited', (editedMessage) => {
+    const handleMessageEdited = (editedMessage) => {
+      // Check if the edited message belongs to the current conversation
+      const isRelevant = (editedMessage.senderId === userId && editedMessage.receiverId === currentUserId) ||
+                         (editedMessage.senderId === currentUserId && editedMessage.receiverId === userId);
+
+      if (isRelevant) {
+        console.log('[Socket] Received messageEdited:', editedMessage);
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             msg.id === editedMessage.id ? editedMessage : msg
           )
         );
-      });
-
-      socket.on('messageRead', (messageId) => {
-        setMessages((prevMessages) =>
-          prevMessages.map((msg) =>
-            msg.id === messageId ? { ...msg, isRead: true } : msg
-          )
-        );
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.off('newMessage');
-        socket.off('messageDeleted');
-        socket.off('messageEdited');
-        socket.off('messageRead');
       }
     };
-  }, [userId, socket, currentUserId]);
+
+    const handleMessageRead = (readInfo) => {
+      // Ensure readInfo contains the messageId and potentially the conversation context
+      const messageId = readInfo.messageId;
+      console.log('[Socket] Received messageRead:', messageId);
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === messageId ? { ...msg, isRead: true } : msg
+        )
+      );
+    };
+
+    // Register listeners
+    socket.on('newMessage', handleNewMessage);
+    socket.on('messageDeleted', handleMessageDeleted);
+    socket.on('messageEdited', handleMessageEdited);
+    socket.on('messageRead', handleMessageRead);
+
+    // Emit join event to server
+    socket.emit('join', { userId: currentUserId });
+
+    // Cleanup function
+    return () => {
+      console.log('[Conversation socketEffect] Cleaning up socket listeners for user:', userId);
+      socket.off('newMessage', handleNewMessage);
+      socket.off('messageDeleted', handleMessageDeleted);
+      socket.off('messageEdited', handleMessageEdited);
+      socket.off('messageRead', handleMessageRead);
+    };
+
+  }, [socket, userId, currentUserId]); // Depend on socket, userId, and currentUserId
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -123,12 +204,39 @@ const Conversation = ({ userId, socket }) => {
         attachmentUrl = uploadResponse.data.url;
       }
 
-      if (!currentUserId) {
-        setError('User information is missing');
+      if (!userId) {
+        setError('Recipient information is missing');
         return;
       }
-      const sentMessage = await sendMessage(currentUserId, userId, messageContent, attachmentUrl);
-      setMessages(prev => [...prev, sentMessage]);
+      
+      console.log('Sending message to', userId, ':', messageContent);
+      
+      // First try to send via socket for real-time delivery
+      if (socket && socket.connected) {
+        console.log('[Socket] Emitting sendMessage event');
+        socket.emit('sendMessage', {
+          receiverId: userId,
+          content: messageContent,
+          attachmentUrl
+        });
+      }
+      
+      // Also send via HTTP API as a fallback
+      const sentMessage = await sendMessage(userId, messageContent, attachmentUrl);
+      console.log('Message sent successfully:', sentMessage);
+      
+      // Only add to messages if not already added by socket event
+      setMessages(prev => {
+        if (prev.some(msg => 
+          msg.content === messageContent && 
+          msg.senderId === currentUserId && 
+          msg.receiverId === userId &&
+          new Date(msg.createdAt).getTime() > Date.now() - 5000)) {
+          return prev; // Skip if a similar message was recently added (likely from socket)
+        }
+        return [...prev, sentMessage];
+      });
+      
       setNewMessage('');
       setSelectedFile(null);
       setUploadProgress(0);
@@ -192,8 +300,13 @@ const Conversation = ({ userId, socket }) => {
       <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-red-500 text-center">
           <p className="font-medium">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => {
+              setError(null); // Clear the error
+              setLoading(true); // Set back to loading state
+              // The useEffect hook will automatically attempt to refetch
+              // when the state updates or if dependencies change.
+            }}
             className="mt-2 text-sm text-blue-600 hover:underline"
           >
             Try again

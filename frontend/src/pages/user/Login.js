@@ -1,5 +1,4 @@
 import { useState, useContext } from "react";
-import { login } from "../../api/auth";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/UI/Footer";
@@ -10,7 +9,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const { setUser } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -58,8 +57,8 @@ const Login = () => {
     setIsSubmitting(true);
     
     try {
-      const data = await login(formData.email, formData.password);
-      // setUser({ token: data.accessToken });
+      // Use the login method from AuthContext
+      await login(formData.email, formData.password);
       
       await Swal.fire({
         title: "Success!",
