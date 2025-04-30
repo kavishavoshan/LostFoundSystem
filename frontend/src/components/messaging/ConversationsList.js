@@ -67,39 +67,47 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
         <h2 className="text-xl font-semibold text-gray-800">Messages</h2>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {conversations.map((conversation) => (
-          <div
-            key={conversation.otherUser.id}
-            onClick={() => onSelectUser(conversation.otherUser.id)}
-            className={`p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors ${
-              selectedUserId === conversation.otherUser.id ? 'bg-blue-50' : ''
-            }`}
-          >
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-medium">
-                    {conversation.otherUser.firstName[0]}
-                    {conversation.otherUser.lastName[0]}
-                  </span>
+        {conversations.map((conversation) => {
+          // Add null checks for conversation and otherUser
+          if (!conversation || !conversation.otherUser) {
+            return null;
+          }
+          
+          return (
+            <div
+              key={conversation.otherUser.id}
+              onClick={() => onSelectUser(conversation.otherUser.id)}
+              className={`p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors ${
+                selectedUserId === conversation.otherUser.id ? 'bg-blue-50' : ''
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 font-medium">
+                      {conversation.otherUser.firstName?.[0]}
+                      {conversation.otherUser.lastName?.[0]}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">
-                    {conversation.otherUser.firstName} {conversation.otherUser.lastName}
-                  </h3>
-                  <span className="text-xs text-gray-500">
-                    {format(new Date(conversation.lastMessage.createdAt), 'MMM d')}
-                  </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">
+                      {conversation.otherUser.firstName} {conversation.otherUser.lastName}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {conversation.lastMessage?.createdAt && 
+                        format(new Date(conversation.lastMessage.createdAt), 'MMM d')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 truncate mt-1">
+                    {conversation.lastMessage?.content}
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600 truncate mt-1">
-                  {conversation.lastMessage.content}
-                </p>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
