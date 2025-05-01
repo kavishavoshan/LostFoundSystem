@@ -152,8 +152,9 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         userId
       );
       
-      // Broadcast the edited message to all relevant clients
-      this.server.to(editedMessage.receiverId).emit('messageEdited', editedMessage);
+      // Broadcast the edited message (ensure it includes all necessary fields, including attachmentUrl if applicable)
+      // The service method should return the full updated document
+      this.server.to(editedMessage.receiverId.toString()).emit('messageEdited', editedMessage);
       this.server.to(userId).emit('messageEdited', editedMessage);
       
       return { success: true, message: editedMessage };
@@ -201,22 +202,32 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
     
     try {
-      this.logger.log(`Creating message from ${userId} to ${payload.receiverId}: ${payload.content.substring(0, 20)}...`);
+      this.logger.log(`Creating message from ${userId} to ${payload.receiverId}: ${payload.content?.substring(0, 20)}... Attachment: ${payload.attachmentUrl ? 'Yes' : 'No'}`);
       
-      // Create the message in the database
-      const message = await this.messagesService.create({
-        ...payload,
+      // Create the message in the database, ensuring attachmentUrl is passed
+      const messageData: CreateMessageDto = {
+        content: payload.content,
+        receiverId: payload.receiverId,
+        attachmentUrl: payload.attachmentUrl, // Explicitly include attachmentUrl
         senderId: userId, // Ensure senderId is set from authenticated user
-      }, userId);
+      };
       
-      // Emit the new message to the recipient's room
-      this.server.to(payload.receiverId).emit('newMessage', message);
+      const message = await this.messagesService.create(messageData, userId);
+      
+      // Populate sender and receiver info before emitting
+      const populatedMessage = await message.populate([
+        { path: 'senderId', select: 'firstName lastName email name _id' },
+        { path: 'receiverId', select: 'firstName lastName email name _id' }
+      ]);
+      
+      // Emit the new message (including attachmentUrl) to the recipient's room
+      this.server.to(payload.receiverId).emit('newMessage', populatedMessage);
       
       // Also emit back to the sender for confirmation
-      this.server.to(userId).emit('newMessage', message);
+      this.server.to(userId).emit('newMessage', populatedMessage);
       
       this.logger.log(`Message sent successfully: ${message.id}`);
-      return { success: true, message };
+      return { success: true, message: populatedMessage }; // Return populated message
     } catch (error) {
       this.logger.error(`Error sending message: ${error.message}`);
       return { error: error.message };
