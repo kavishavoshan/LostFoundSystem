@@ -1,13 +1,22 @@
 import { IsString, IsNotEmpty, IsOptional, IsArray, IsNumber } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateLostItemDto {
   @IsString()
   @IsNotEmpty()
   userId: string;
 
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value instanceof Buffer) return value;
+    if (typeof value === 'string') return Buffer.from(value);
+    return value;
+  })
+  image?: Buffer;
+
   @IsString()
   @IsOptional()
-  image?: string;
+  imageContentType?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -29,4 +38,4 @@ export class CreateLostItemDto {
   @IsNumber({}, { each: true })
   @IsOptional()
   clip_vector?: number[];
-} 
+}

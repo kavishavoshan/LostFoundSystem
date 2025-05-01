@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { getFoundItems, createFoundItem } from "../../api/foundItems";
-
-import { Input } from "../UI/input";
-import { Button } from "../UI/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../UI/card";
+import { useAuth } from '../../context/AuthContext';
+import { Spinner } from '../UI/Spinner';
 import "../../styles/itemManagementCSS.css";
-import { Description } from "@headlessui/react";
 
 const FoundItems = () => {
   const [items, setItems] = useState([]);
-  const [user, setUser] = useState();
-  
+  const [imagePreview, setImagePreview] = useState(null);
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const [newItem, setNewItem] = useState({
     itemName: "",
-    imageUrl: "",
+    image: null,
     foundLocation: "",
     contactNumber: user?.phoneNumber || "",
     description: "",
-    userName: user?.name || "",
+    category: "Unknown",
+    userId: user?.id || ""
   });
 
   useEffect(() => {
@@ -26,29 +25,59 @@ const FoundItems = () => {
   }, []);
 
   const fetchItems = async () => {
-    const data = await getFoundItems();
-    setItems(data);
+    try {
+      const data = await getFoundItems();
+      setItems(data);
+    } catch (error) {
+      console.error("Error fetching found items:", error);
+    }
   };
 
   const handleChange = (e) => {
-    setNewItem({ ...newItem, [e.target.name]: e.target.value });
+    if (e.target.name === 'image') {
+      const file = e.target.files?.[0];
+      if (file) {
+        setNewItem({ ...newItem, image: file });
+        // Create preview URL
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      setNewItem({ ...newItem, [e.target.name]: e.target.value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!newItem.image) {
+      alert('Please upload an image of the found item');
+      return;
+    }
+    
+    setIsLoading(true);
     try {
-      await createFoundItem(newItem);
+      await createFoundItem({
+        ...newItem,
+        userId: user?.id
+      });
       fetchItems();
       setNewItem({
         itemName: "",
-        imageUrl: "",
+        image: null,
         foundLocation: "",
         contactNumber: user?.phoneNumber || "",
         description: "",
-        userName: user?.name || "",
+        category: "Unknown",
+        userId: user?.id || ""
       });
+      setImagePreview(null);
     } catch (error) {
-      console.error("Failed to add item");
+      console.error("Failed to add item:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -61,22 +90,6 @@ const FoundItems = () => {
             <p className="mt-1 text-sm leading-6 text-gray-600">Please provide accurate information about the Found Item.</p>
 
             <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-              <div className="sm:col-span-3">
-                <label htmlFor="userName" className="block text-sm font-medium leading-6 text-gray-900">
-                  Your Name
-                </label>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    name="userName"
-                    id="userName"
-                    value={user?.name || ""}
-                    disabled
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 bg-gray-100 shadow-sm outline-1 -outline-offset-1 outline-gray-300 sm:text-sm"
-                  />
-                </div>
-              </div>
-
               <div className="sm:col-span-3">
                 <label htmlFor="itemName" className="block text-sm font-medium leading-6 text-gray-900">
                   Item Name
@@ -119,47 +132,38 @@ const FoundItems = () => {
                 </label>
                 <div className="mt-2">
                   <input
-                    type="text"
+                    type="tel"
                     name="contactNumber"
                     id="contactNumber"
-                    value={user?.phoneNumber || ""}
-                    disabled
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 bg-gray-100 shadow-sm outline-1 -outline-offset-1 outline-gray-300 sm:text-sm"
+                    value={newItem.contactNumber}
+                    onChange={handleChange}
+                    placeholder="E.g. 0777788899"
+                    required
+                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
                 </div>
               </div>
 
               <div className="sm:col-span-6">
                 <label htmlFor="image" className="block text-sm font-medium leading-6 text-gray-900">
-                  Item Photo
+                  Item Photo <span className="text-red-500">*</span>
                 </label>
-                <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+                <div className="mt-2 flex flex-col items-center justify-center rounded-lg border border-dashed px-6 py-10 border-gray-900/25">
+                  {imagePreview && (
+                    <img src={imagePreview} alt="Preview" className="mx-auto h-32 w-auto max-w-full object-contain mb-4" />
+                  )}
                   <div className="text-center">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-300"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
                     <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                      <label
-                        htmlFor="imageUrl"
-                        className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none hover:text-indigo-500"
-                      >
-                        <span>Upload an image</span>
+                      <label htmlFor="image-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none hover:text-indigo-500">
+                        <span>{imagePreview ? 'Change photo' : 'Upload a photo'}</span>
                         <input
-                          id="imageUrl"
-                          name="imageUrl"
+                          id="image-upload"
+                          name="image"
                           type="file"
                           accept="image/*"
                           onChange={handleChange}
                           className="sr-only"
+                          required
                         />
                       </label>
                       <p className="pl-1">or drag and drop</p>
@@ -168,6 +172,7 @@ const FoundItems = () => {
                   </div>
                 </div>
               </div>
+
               <div className="sm:col-span-6">
                 <label htmlFor="description" className="block text-sm font-medium leading-6 text-gray-900">
                   Description
@@ -180,7 +185,7 @@ const FoundItems = () => {
                     onChange={handleChange}
                     rows={4}
                     required
-                    placeholder="E.g. Black backpack with red zipper"
+                    placeholder="E.g. Black wallet with red zipper"
                     className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
                   />
                 </div>
@@ -194,13 +199,46 @@ const FoundItems = () => {
             </button>
             <button
               type="submit"
-              className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              disabled={isLoading}
+              className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Item
+              {isLoading ? (
+                <>
+                  <Spinner className="w-4 h-4 mr-2" />
+                  Submitting...
+                </>
+              ) : (
+                'Add Item'
+              )}
             </button>
           </div>
         </div>
       </form>
+
+      {/* Display found items */}
+      <div className="mt-8 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => (
+          <div key={item._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            {item.image && (
+              <img
+                src={item.image}
+                alt={item.itemName || 'Found item'}
+                className="w-full h-48 object-cover"
+              />
+            )}
+            <div className="p-4">
+              <h3 className="text-lg font-semibold">{item.itemName}</h3>
+              <p className="text-gray-600 mt-1">{item.description}</p>
+              <p className="text-sm text-gray-500 mt-2">Location: {item.foundLocation}</p>
+              <p className="text-sm text-gray-500">Contact: {item.contactNumber}</p>
+              <p className="text-sm text-gray-500">Category: {item.category}</p>
+              <p className="text-sm text-gray-500">
+                Posted: {new Date(item.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
