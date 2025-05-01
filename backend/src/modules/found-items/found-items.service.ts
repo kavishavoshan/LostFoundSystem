@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Document } from 'mongoose';
+import { Model } from 'mongoose';
 import { FoundItem } from './found-item.entity';
 import { CreateFoundItemDto } from './dto/create-found-item.dto';
 import { UpdateFoundItemDto } from './dto/update-found-item.dto';
 import { FoundItemResponse } from './types/found-item.types';
 
-type FoundItemDocument = FoundItem & Document;
+type FoundItemDocument = FoundItem & Document & { toObject(): any };
 
 @Injectable()
 export class FoundItemsService {
@@ -19,6 +19,10 @@ export class FoundItemsService {
       ...createFoundItemDto,
       image: createFoundItemDto.image ? Buffer.from(createFoundItemDto.image) : null
     });
+
+    console.log('Created Found Item:', createdFoundItem);
+    console.log('Image Buffer:', createdFoundItem.image);
+
     const savedItem = await createdFoundItem.save();
     return this.convertToResponse(savedItem);
   }

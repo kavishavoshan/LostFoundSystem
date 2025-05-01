@@ -34,13 +34,16 @@ export class FoundItemsController {
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
           new FileTypeValidator({ fileType: '.(png|jpeg|jpg|gif)' }),
         ],
-        fileIsRequired: true,
+        fileIsRequired: false,
       }),
-    ) image: Express.Multer.File,
+    ) image?: Express.Multer.File,
   ): Promise<FoundItemResponse> {
     try {
-      createFoundItemDto.image = image.buffer;
-      createFoundItemDto.imageContentType = image.mimetype;
+      if (image) {
+        createFoundItemDto.image = image.buffer;
+        createFoundItemDto.imageContentType = image.mimetype;
+      }
+
       return await this.foundItemsService.create(createFoundItemDto);
     } catch (error) {
       throw new BadRequestException('Failed to create found item: ' + error.message);

@@ -16,26 +16,14 @@ export const getLostItems = async () => {
 // ✅ CREATE new lost item
 export const createLostItem = async (itemData) => {
   try {
-    // Convert the image file to binary data if it exists
     if (itemData.image instanceof File) {
-      const imageBuffer = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const buffer = Buffer.from(reader.result);
-          resolve(buffer);
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(itemData.image);
-      });
-
-      // Create form data with binary image
       const formData = new FormData();
       formData.append('userId', itemData.userId);
       formData.append('description', itemData.description);
       formData.append('location', itemData.location);
       formData.append('contactNumber', itemData.contactNumber);
       formData.append('category', itemData.category);
-      formData.append('image', imageBuffer);
+      formData.append('image', itemData.image);
       formData.append('imageContentType', itemData.image.type);
 
       const response = await axios.post(API_BASE_URL, formData, {
@@ -45,7 +33,6 @@ export const createLostItem = async (itemData) => {
       });
       return response.data;
     } else {
-      // If no image, send regular JSON data
       const response = await axios.post(API_BASE_URL, {
         userId: itemData.userId,
         description: itemData.description,
@@ -67,22 +54,11 @@ export const createLostItem = async (itemData) => {
 // ✅ UPDATE existing lost item
 export const updateLostItem = async (id, updatedData) => {
   try {
-    // Handle image update similar to create
     if (updatedData.image instanceof File) {
-      const imageBuffer = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const buffer = Buffer.from(reader.result);
-          resolve(buffer);
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(updatedData.image);
-      });
-
       const formData = new FormData();
       Object.keys(updatedData).forEach(key => {
         if (key === 'image') {
-          formData.append('image', imageBuffer);
+          formData.append('image', updatedData.image);
           formData.append('imageContentType', updatedData.image.type);
         } else {
           formData.append(key, updatedData[key]);

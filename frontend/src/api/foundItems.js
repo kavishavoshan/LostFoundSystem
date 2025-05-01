@@ -14,31 +14,20 @@ export const getFoundItems = async () => {
   }
 };
 
-// ✅ CREATE new found item 
+// ✅ CREATE new found item
 export const createFoundItem = async (itemData) => {
+  console.log("Item data in createFoundItem: ", itemData);
   try {
     // Convert the image file to binary data if it exists
     if (itemData.image instanceof File) {
-      const imageBuffer = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const buffer = Buffer.from(reader.result);
-          resolve(buffer);
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(itemData.image);
-      });
-
-      // Create form data with binary image
       const formData = new FormData();
-      Object.keys(itemData).forEach(key => {
-        if (key === 'image') {
-          formData.append('image', imageBuffer);
-          formData.append('imageContentType', itemData.image.type);
-        } else {
-          formData.append(key, itemData[key]);
-        }
-      });
+      formData.append('userId', itemData.userId);
+      formData.append('description', itemData.description);
+      formData.append('location', itemData.location);
+      formData.append('contactNumber', itemData.contactNumber);
+      formData.append('category', itemData.category);
+      formData.append('image', itemData.image);
+      formData.append('imageContentType', itemData.image.type);
 
       const response = await axios.post(API_BASE_URL, formData, {
         headers: {
@@ -47,15 +36,20 @@ export const createFoundItem = async (itemData) => {
       });
       return response.data;
     } else {
-      // If no image, send regular JSON
-      const response = await axios.post(API_BASE_URL, itemData);
+      // If no image, send regular JSON data
+      const response = await axios.post(API_BASE_URL, {
+        userId: itemData.userId,
+        description: itemData.description,
+        location: itemData.location,
+        contactNumber: itemData.contactNumber,
+        category: itemData.category
+      });
       return response.data;
     }
   } catch (error) {
     console.error("Error adding found item:", error);
-    if (error.response) {
-      console.error("Server error response:", error.response.data);
-      throw new Error(error.response.data.message || 'Failed to create found item');
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
     }
     throw error;
   }
@@ -66,20 +60,10 @@ export const updateFoundItem = async (id, updatedData) => {
   try {
     // Handle image update similar to create
     if (updatedData.image instanceof File) {
-      const imageBuffer = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const buffer = Buffer.from(reader.result);
-          resolve(buffer);
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(updatedData.image);
-      });
-
       const formData = new FormData();
       Object.keys(updatedData).forEach(key => {
         if (key === 'image') {
-          formData.append('image', imageBuffer);
+          formData.append('image', updatedData.image);
           formData.append('imageContentType', updatedData.image.type);
         } else {
           formData.append(key, updatedData[key]);
@@ -123,10 +107,9 @@ export const getPredictedCategory = async (imageFile) => {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      withCredentials: false  // Add this to handle CORS
+      withCredentials: false
     });
 
-    // Check if we got a valid response
     if (response.data && response.data.category) {
       return response.data.category;
     }

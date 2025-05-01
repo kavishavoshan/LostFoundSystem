@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsArray, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateFoundItemDto {
@@ -6,17 +6,18 @@ export class CreateFoundItemDto {
   @IsNotEmpty()
   userId: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @Transform(({ value }) => {
+    if (value === null) return null;
     if (value instanceof Buffer) return value;
     if (typeof value === 'string') return Buffer.from(value);
     return value;
   })
-  image: Buffer;
+  image?: Buffer | null;
 
   @IsString()
-  @IsNotEmpty()
-  imageContentType: string;
+  @IsOptional()
+  imageContentType?: string | null;
 
   @IsString()
   @IsNotEmpty()

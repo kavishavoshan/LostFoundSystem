@@ -9,10 +9,10 @@ export class FoundItem {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   userId: User;
 
-  @Prop({ type: Buffer, required: true })
+  @Prop({ type: Buffer, required: false })
   image: Buffer;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   imageContentType: string;
 
   @Prop({ required: true })

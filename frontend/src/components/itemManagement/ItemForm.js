@@ -4,6 +4,8 @@ import { createLostItem } from '../../api/lostItems';
 import { createFoundItem } from '../../api/foundItems';
 import { useAuth } from '../../context/AuthContext';
 import { Spinner } from '../UI/Spinner';
+import { compressAndConvertImage } from '../../utils/imageProcessor';
+
 
 const CATEGORIES = [
   "Card",
@@ -31,7 +33,9 @@ const ItemForm = ({ type = 'lost', onClose }) => {
     setValue,
     watch,
     formState: { errors },
-    reset
+    reset,
+    setError,
+    clearErrors
   } = useForm({
     defaultValues: {
       contactNumber: authUser?.mobileNumber || authUser?.phoneNumber || '',
@@ -90,7 +94,28 @@ const ItemForm = ({ type = 'lost', onClose }) => {
   const handleImageChange = async (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      setValue('image', file);
+      // Validate file type
+      if (!file.type.match(/^image\/(jpeg|png|jpg)$/)) {
+        setError('image', {
+          type: 'manual',
+          message: 'Please upload a valid image file (JPG, PNG)',
+        });
+        return;
+      }
+      
+      try {
+        // Process the image
+        const processedImage = await compressAndConvertImage(file);
+        console.log('Processed image:', processedImage);
+        setValue('image', processedImage);
+        clearErrors('image');
+      } catch (error) {
+        console.error('Error processing image:', error);
+        setError('image', {
+          type: 'manual',
+          message: 'Error processing image. Please try again.',
+        });
+      }
     }
   };
 
@@ -107,7 +132,7 @@ const ItemForm = ({ type = 'lost', onClose }) => {
         description: data.description.trim(),
         contactNumber: data.contactNumber.trim(),
         category: data.category,
-        image: data.image,
+        image: imageField,
         location: data.location.trim(),
       };
 
@@ -199,7 +224,7 @@ const ItemForm = ({ type = 'lost', onClose }) => {
       {/* Image Upload */}
       <div>
         <label htmlFor="image-upload" className="block text-sm font-medium text-gray-700">
-          Item Photo {type === 'found' && <span className="text-red-500">*</span>}
+          Item Photo
         </label>
         <div className={`mt-2 flex flex-col items-center justify-center rounded-lg border border-dashed px-6 py-10 ${errors.image ? 'border-red-500' : 'border-gray-900/25'}`}>
           {previewUrl && (
@@ -215,9 +240,29 @@ const ItemForm = ({ type = 'lost', onClose }) => {
                   accept="image/*"
                   className="sr-only"
                   {...register('image', {
-                    required: type === 'found' ? 'Image is required for found items' : false,
-                    onChange: (e) => handleImageChange(e)
+                    required: false,
+                    validate: {
+                      fileType: (value) => {
+                        if (value?.[0]) {
+                          const file = value[0];
+                          if (!file.type.match(/^image\/(jpeg|png|gif|jpg)$/)) {
+                            return 'Please upload a valid image file (JPG, PNG, or GIF)';
+                          }
+                        }
+                        return true;
+                      },
+                      // fileSize: (value) => {
+                      //   if (value?.[0]) {
+                      //     const file = value[0];
+                      //     if (file.size > 10 * 1024 * 1024) {
+                      //       return 'Image size must be less than 10MB';
+                      //     }
+                      //   }
+                      //   return true;
+                      // }
+                    }
                   })}
+                  onChange={(e) => handleImageChange(e)}
                 />
               </label>
             </div>

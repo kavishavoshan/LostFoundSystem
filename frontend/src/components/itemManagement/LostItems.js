@@ -8,6 +8,15 @@ const LostItems = () => {
   const [items, setItems] = useState([]);
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [newItem, setNewItem] = useState({
+    itemName: "",
+    image: null,
+    lostLocation: "",
+    contactNumber: user?.phoneNumber || "",
+    description: "",
+    category: "Unknown",
+    userId: user?._id || ""
+  });
 
   useEffect(() => {
     fetchItems();
@@ -23,6 +32,10 @@ const LostItems = () => {
   };
 
   const handleFormClose = () => {
+    if (!user?._id) {
+      alert('Please log in to report a lost item');
+      return;
+    }
     setShowForm(false);
     fetchItems();
   };

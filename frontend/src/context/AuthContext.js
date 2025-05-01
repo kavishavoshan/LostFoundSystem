@@ -8,36 +8,46 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Initialize auth state from localStorage
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (token && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-        checkAuth(); // Verify token and refresh user data
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        logout();
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          
+          // Verify token validity and refresh user data
+          await checkAuth();
+        } catch (error) {
+          console.error('Error initializing auth:', error);
+          await logout();
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
       const response = await axios.get('http://localhost:3001/auth/me');
       const userData = response.data;
+      
       setUser(userData);
       setIsAuthenticated(true);
-      // Update stored user data
       localStorage.setItem('user', JSON.stringify(userData));
+      
+      return true;
     } catch (error) {
       console.error('Auth check failed:', error);
-      logout();
+      await logout();
+      return false;
     }
   };
 
@@ -47,34 +57,23 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
+      
       const { accessToken, user } = response.data;
+      
       localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
+      
       axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
       setUser(user);
       setIsAuthenticated(true);
+      
       return true;
     } catch (error) {
       throw error;
     }
   };
 
-  const register = async (userData) => {
-    try {
-      const response = await axios.post('http://localhost:3001/auth/register', userData);
-      const { accessToken, user } = response.data;
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-      setUser(user);
-      setIsAuthenticated(true);
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const logout = () => {
+  const logout = async () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
@@ -82,12 +81,22 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const value = {
+    isAuthenticated,
+    user,
+    login,
+    logout,
+    checkAuth,
+  };
+
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>;
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, register, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
