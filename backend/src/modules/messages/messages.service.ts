@@ -196,10 +196,51 @@ export class MessagesService implements OnModuleInit {
     if (!message) {
       throw new NotFoundException('Message not found');
     }
+    
+    // Only allow deletion if the user is the sender
+    if (message.senderId.toString() !== userId) {
+      throw new Error('You can only delete messages you sent');
+    }
+    
+    // Check if the message is within the 15-minute deletion window
+    // Access createdAt from the document's _id which contains the timestamp
+    const createdAt = new Date(message._id.getTimestamp());
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+    
+    if (diffInMinutes > 15) {
+      throw new Error('Messages can only be deleted within 15 minutes of sending');
+    }
+    
     const deletedMessage = await this.messageModel.findByIdAndDelete(id).exec();
     if (!deletedMessage) {
       throw new NotFoundException('Message not found');
     }
     return deletedMessage;
+  }
+  
+  async editMessage(id: string, content: string, userId: string): Promise<MessageDocument> {
+    // Find the message and verify ownership
+    const message = await this.messageModel.findOne({ _id: id, senderId: userId }).exec();
+    if (!message) {
+      throw new NotFoundException('Message not found or you are not authorized to edit it');
+    }
+    
+    // Check if the message is within the 15-minute edit window
+    // Access createdAt from the document's _id which contains the timestamp
+    const createdAt = new Date(message._id.getTimestamp());
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+    
+    if (diffInMinutes > 15) {
+      throw new Error('Messages can only be edited within 15 minutes of sending');
+    }
+    
+    // Update the message
+    message.content = content;
+    message.isEdited = true;
+    message.editedAt = now;
+    
+    return message.save();
   }
 }

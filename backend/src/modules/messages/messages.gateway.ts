@@ -10,13 +10,15 @@ import { Server, Socket } from 'socket.io';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { JwtService } from '@nestjs/jwt';
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
+import { WsJwtAuthGuard } from '../auth/guards/ws-jwt-auth.guard';
 
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
+@UseGuards(WsJwtAuthGuard) // Apply the guard to the entire gateway
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
   server: Server;
@@ -36,37 +38,23 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
     
-    try {
-      // Extract token from handshake auth
-      const token = client.handshake.auth.token;
-      if (!token) {
-        this.logger.error('No token provided, disconnecting client');
-        client.disconnect();
-        return;
-      }
-      
-      // Verify and decode the token
-      const decoded = this.jwtService.verify(token);
-      const userId = decoded.userId || decoded.sub;
-      
-      if (!userId) {
-        this.logger.error('Invalid token payload, disconnecting client');
-        client.disconnect();
-        return;
-      }
-      
-      // Store the mapping between userId and socketId
-      this.userSocketMap.set(userId, client.id);
-      client.data.userId = userId; // Store userId in socket data for easy access
-      
-      this.logger.log(`User ${userId} connected with socket ${client.id}`);
-      
-      // Join a room with the user's ID to receive direct messages
-      client.join(userId);
-    } catch (error) {
-      this.logger.error(`Socket authentication failed: ${error.message}`);
+    // Authentication should be handled by a Guard (e.g., WsJwtAuthGuard)
+    // applied to the gateway or globally.
+    // We retrieve the userId added by the guard.
+    const userId = client.data.userId; // Assuming the guard adds userId to client.data
+
+    if (!userId) {
+      this.logger.error('User ID not found on socket data after connection. Ensure Auth Guard is running.');
       client.disconnect();
+      return;
     }
+
+    // Store the mapping between userId and socketId
+    this.userSocketMap.set(userId, client.id);
+    this.logger.log(`User ${userId} connected with socket ${client.id}`);
+
+    // Join a room with the user's ID to receive direct messages
+    client.join(userId);
   }
 
   handleDisconnect(client: Socket) {
@@ -104,12 +92,79 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
     
     this.logger.log(`Message ${data.messageId} status updated to ${data.status}`);
-    // Broadcast to all connected clients except sender
-    client.broadcast.emit('messageStatus', {
+    // Emit to all connected clients except sender
+    this.server.emit('messageStatus', {
       messageId: data.messageId,
       status: data.status,
       userId: userId
     });
+    
+    // If the status is 'read', also emit a messageRead event for more specific handling
+    if (data.status === 'read') {
+      this.server.emit('messageRead', {
+        messageId: data.messageId,
+        userId: userId,
+        readAt: new Date()
+      });
+    }
+  }
+  
+  @SubscribeMessage('editMessage')
+  async handleEditMessage(client: Socket, data: { messageId: string, content: string }) {
+    const userId = client.data.userId;
+    if (!userId) {
+      this.logger.error('User not authenticated for edit message event');
+      return { error: 'Not authenticated' };
+    }
+    
+    try {
+      this.logger.log(`Editing message ${data.messageId} by user ${userId}`);
+      
+      // Edit the message in the database
+      const editedMessage = await this.messagesService.editMessage(
+        data.messageId,
+        data.content,
+        userId
+      );
+      
+      // Broadcast the edited message to all relevant clients
+      this.server.to(editedMessage.receiverId).emit('messageEdited', editedMessage);
+      this.server.to(userId).emit('messageEdited', editedMessage);
+      
+      return { success: true, message: editedMessage };
+    } catch (error) {
+      this.logger.error(`Error editing message: ${error.message}`);
+      return { error: error.message };
+    }
+  }
+  
+  @SubscribeMessage('deleteMessage')
+  async handleDeleteMessage(client: Socket, data: { messageId: string }) {
+    const userId = client.data.userId;
+    if (!userId) {
+      this.logger.error('User not authenticated for delete message event');
+      return { error: 'Not authenticated' };
+    }
+    
+    try {
+      this.logger.log(`Deleting message ${data.messageId} by user ${userId}`);
+      
+      // Get the message to find the recipient before deleting
+      const message = await this.messagesService.findOne(data.messageId);
+      const recipientId = message.receiverId;
+      
+      // Delete the message from the database
+      await this.messagesService.delete(data.messageId, userId);
+      
+      // Broadcast the deletion to all relevant clients
+      this.server.to(recipientId).emit('messageDeleted', { messageId: data.messageId });
+      this.server.to(userId).emit('messageDeleted', { messageId: data.messageId });
+      
+      return { success: true };
+    } catch (error) {
+      this.logger.error(`Error deleting message: ${error.message}`);
+      return { error: error.message };
+    }
   }
 
   @SubscribeMessage('sendMessage')

@@ -16,6 +16,18 @@ export class Message {
 
   @Prop({ default: false })
   isRead: boolean;
+  
+  @Prop({ type: Date, default: null })
+  readAt: Date;
+  
+  @Prop({ type: String, default: null })
+  attachmentUrl: string;
+  
+  @Prop({ type: Boolean, default: false })
+  isEdited: boolean;
+  
+  @Prop({ type: Date, default: null })
+  editedAt: Date;
 }
 
-export const MessageSchema = SchemaFactory.createForClass(Message); 
+export const MessageSchema = SchemaFactory.createForClass(Message);

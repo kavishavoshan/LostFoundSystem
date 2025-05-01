@@ -7,13 +7,16 @@ import { Message, MessageSchema } from './message.entity';
 import { User, UserSchema } from '../user/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module'; // Import AuthModule
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Message.name, schema: MessageSchema },
+      { name: Message.name, schema: MessageSchema },
       { name: User.name, schema: UserSchema }
     ]),
+    AuthModule, // Add AuthModule here
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -27,4 +30,4 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   providers: [MessagesService, MessagesGateway],
   exports: [MessagesService],
 })
-export class MessagesModule {} 
+export class MessagesModule {}
