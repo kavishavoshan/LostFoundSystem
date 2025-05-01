@@ -35,26 +35,51 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.logger.log('WebSocket Gateway initialized');
   }
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
     
-    // Authentication should be handled by a Guard (e.g., WsJwtAuthGuard)
-    // applied to the gateway or globally.
-    // We retrieve the userId added by the guard.
-    const userId = client.data.userId; // Assuming the guard adds userId to client.data
+    try {
+      // Authentication should be handled by a Guard (e.g., WsJwtAuthGuard)
+      // applied to the gateway or globally.
+      // We retrieve the userId added by the guard.
+      const userId = client.data?.userId; // Assuming the guard adds userId to client.data
 
-    if (!userId) {
-      this.logger.error('User ID not found on socket data after connection. Ensure Auth Guard is running.');
+      if (!userId) {
+        // Try to extract token from handshake auth data
+        const token = client.handshake.auth?.token;
+        if (token) {
+          try {
+            // Verify the token manually if the guard didn't work
+            const payload = await this.jwtService.verifyAsync(token);
+            if (payload && payload.sub) {
+              // Set the userId in client.data
+              client.data = client.data || {};
+              client.data.userId = payload.sub;
+              this.logger.log(`Manually authenticated user ${payload.sub} from token`);
+            }
+          } catch (jwtError) {
+            this.logger.error(`JWT verification failed: ${jwtError.message}`);
+          }
+        }
+      }
+      
+      // Check again if we have a userId after manual verification
+      if (!client.data?.userId) {
+        this.logger.error('User ID not found on socket data after connection. Ensure Auth Guard is running.');
+        client.disconnect();
+        return;
+      }
+
+      // Store the mapping between userId and socketId
+      this.userSocketMap.set(client.data.userId, client.id);
+      this.logger.log(`User ${client.data.userId} connected with socket ${client.id}`);
+
+      // Join a room with the user's ID to receive direct messages
+      client.join(client.data.userId);
+    } catch (error) {
+      this.logger.error(`Error in handleConnection: ${error.message}`);
       client.disconnect();
-      return;
     }
-
-    // Store the mapping between userId and socketId
-    this.userSocketMap.set(userId, client.id);
-    this.logger.log(`User ${userId} connected with socket ${client.id}`);
-
-    // Join a room with the user's ID to receive direct messages
-    client.join(userId);
   }
 
   handleDisconnect(client: Socket) {

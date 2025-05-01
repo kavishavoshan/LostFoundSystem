@@ -108,45 +108,64 @@ export class MessagesService implements OnModuleInit {
   }
 
   async getConversations(userId: string): Promise<any[]> {
-        const messages = await this.messageModel
+    // Add logging to track the process
+    console.log(`Getting conversations for user: ${userId}`);
+    
+    const messages = await this.messageModel
       .find({
         $or: [{ senderId: userId }, { receiverId: userId }],
       })
       .sort({ createdAt: -1 })
-      .populate('senderId', 'id firstName lastName email') // Populate sender details
-      .populate('receiverId', 'id firstName lastName email') // Populate receiver details
+      .populate('senderId', 'firstName lastName email name _id') // Include _id and name fields
+      .populate('receiverId', 'firstName lastName email name _id') // Include _id and name fields
       .exec();
 
+    console.log(`Found ${messages.length} messages for user ${userId}`);
+    
     const conversations = {};
 
     messages.forEach((message) => {
-      // Ensure senderId and receiverId are populated objects with an id
-      const sender = message.senderId as any; // Use 'as any' or a proper type guard/interface
-      const receiver = message.receiverId as any; // Use 'as any' or a proper type guard/interface
+      // Log the message to debug
+      console.log(`Processing message: ${message._id}, senderId: ${typeof message.senderId === 'object' ? (message.senderId as any)._id : message.senderId}, receiverId: ${typeof message.receiverId === 'object' ? (message.receiverId as any)._id : message.receiverId}`);
+      
+      // Ensure senderId and receiverId are populated objects with an _id
+      const sender = message.senderId as any;
+      const receiver = message.receiverId as any;
 
       let otherUser: any = null;
 
       // Check if sender is the current user and receiver exists
-      if (sender && typeof sender === 'object' && sender.id && sender.id.toString() === userId) {
+      if (sender && typeof sender === 'object' && (sender._id || sender.id) && (sender._id?.toString() === userId || sender.id?.toString() === userId)) {
           otherUser = receiver;
+          console.log(`Current user is sender, other user is: ${otherUser?._id || otherUser?.id}`);
       // Check if receiver is the current user and sender exists
-      } else if (receiver && typeof receiver === 'object' && receiver.id && receiver.id.toString() === userId) {
+      } else if (receiver && typeof receiver === 'object' && (receiver._id || receiver.id) && (receiver._id?.toString() === userId || receiver.id?.toString() === userId)) {
           otherUser = sender;
+          console.log(`Current user is receiver, other user is: ${otherUser?._id || otherUser?.id}`);
       }
 
       // Ensure otherUser is a valid populated object before proceeding
-      if (otherUser && typeof otherUser === 'object' && otherUser.id) {
-        const otherUserId = otherUser.id.toString(); // Use toString() for safety if id is ObjectId
+      if (otherUser && typeof otherUser === 'object' && (otherUser._id || otherUser.id)) {
+        const otherUserId = (otherUser._id || otherUser.id).toString(); // Use toString() for safety if id is ObjectId
 
         // If this is the first message seen for this conversation, initialize it
         if (!conversations[otherUserId]) {
+          // Get name from either firstName+lastName or name field
+          const firstName = otherUser.firstName || '';
+          const lastName = otherUser.lastName || '';
+          const fullName = otherUser.name || (firstName && lastName ? `${firstName} ${lastName}` : firstName || 'Unknown');
+          
+          console.log(`Creating conversation with user: ${fullName} (${otherUserId})`);
+          
           conversations[otherUserId] = {
             // Explicitly structure the otherUser object with needed fields
             otherUser: {
-              id: otherUser.id,
-              firstName: otherUser.firstName,
-              lastName: otherUser.lastName,
-              email: otherUser.email,
+              id: otherUserId,
+              _id: otherUserId, // Include both id and _id for compatibility
+              firstName: firstName,
+              lastName: lastName,
+              name: fullName,
+              email: otherUser.email || '',
               // Add other fields if needed, e.g., profile picture URL
             },
             lastMessage: message, // This is the latest message so far due to sorting
@@ -155,10 +174,17 @@ export class MessagesService implements OnModuleInit {
         // Since messages are sorted descending by createdAt, the first one we encounter
         // for a given otherUserId is the latest message.
       } else {
-         // Optional: Log if a message couldn't be processed for a conversation
-         // console.warn(`Could not determine or process other user for message ID: ${message._id}`);
+         // Log if a message couldn't be processed for a conversation
+         console.warn(`Could not determine or process other user for message ID: ${message._id}`);
       }
     });
+    
+    // Log the final result
+    console.log(`Returning ${Object.keys(conversations).length} conversations`);
+    Object.keys(conversations).forEach(key => {
+      console.log(`Conversation with: ${conversations[key].otherUser.firstName} ${conversations[key].otherUser.lastName} (${key})`);
+    });
+
 
     // Convert the conversations object into an array
     return Object.values(conversations);
