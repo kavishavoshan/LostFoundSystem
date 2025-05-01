@@ -11,6 +11,12 @@ const Messaging = () => {
   const [showUserSearch, setShowUserSearch] = useState(false);
   // Destructure loading state and token from useAuth
   const { user, token, loading: authLoading } = useAuth(); // <-- Added token
+  
+  // Add socket connection status state at the top level
+  const [socketStatus, setSocketStatus] = useState({
+    connected: false,
+    error: null
+  });
 
   useEffect(() => {
     // Only initialize socket if auth is loaded and user exists
@@ -57,9 +63,37 @@ const Messaging = () => {
     // Add authLoading, user, and token as dependencies
   }, [authLoading, user, token]); // <-- Keep token dependency
 
-
-  // Import useAuth at the top level of the component
-  // const { user } = useAuth(); // Moved up and added loading
+  // Update socket status when socket changes
+  useEffect(() => {
+    if (socket) {
+      const handleConnect = () => {
+        setSocketStatus(prev => ({ ...prev, connected: true, error: null }));
+      };
+      
+      const handleDisconnect = (reason) => {
+        setSocketStatus(prev => ({ ...prev, connected: false }));
+        console.log('[Socket] Disconnected:', reason);
+      };
+      
+      const handleError = (error) => {
+        setSocketStatus(prev => ({ ...prev, error: error.message }));
+        console.error('[Socket] Error:', error);
+      };
+      
+      socket.on('connect', handleConnect);
+      socket.on('disconnect', handleDisconnect);
+      socket.on('error', handleError);
+      
+      // Set initial status
+      setSocketStatus(prev => ({ ...prev, connected: socket.connected }));
+      
+      return () => {
+        socket.off('connect', handleConnect);
+        socket.off('disconnect', handleDisconnect);
+        socket.off('error', handleError);
+      };
+    }
+  }, [socket]);
   
   // Define the handleSelectUser function at the component level
   const handleSelectUser = async (userId) => {
@@ -91,17 +125,16 @@ const Messaging = () => {
   // ADD CONSOLE LOGS FOR DEBUGGING
   console.log('[Messaging Render] selectedUserId:', selectedUserId);
   console.log('[Messaging Render] user from useAuth:', user);
-  // console.log('[Messaging Render] Condition check:', selectedUserId && user && (user._id || user.id)); // Removed this line
-  console.log('[Messaging Render] authLoading:', authLoading); // Added this line
-  console.log('[Messaging Render] token:', token); // Add token logging
+  console.log('[Messaging Render] authLoading:', authLoading);
+  console.log('[Messaging Render] token:', token);
 
   // Display loading indicator while auth context is loading
   if (authLoading) {
-    console.log('[Messaging Render] Rendering Auth Loading state.'); // Added this line
+    console.log('[Messaging Render] Rendering Auth Loading state.');
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        <p className="ml-4 text-gray-600">Loading authentication...</p> // Added this line
+        <p className="ml-4 text-gray-600">Loading authentication...</p>
       </div>
     );
   }
@@ -122,8 +155,8 @@ const Messaging = () => {
   console.log('[Messaging Render] Auth loaded and user exists:', user);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      <header className="bg-blue-600 shadow-md">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <header className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,25 +164,47 @@ const Messaging = () => {
             </svg>
             Messages
           </h1>
-          <button
-            onClick={() => setShowUserSearch(true)}
-            className="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 shadow-sm flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Message
-          </button>
+          <div className="flex items-center space-x-3">
+            {/* Socket status indicator */}
+            <div className="flex items-center bg-white bg-opacity-20 px-3 py-1 rounded-full">
+              <div className={`w-3 h-3 rounded-full mr-2 ${socketStatus.connected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
+              <span className="text-xs text-white hidden md:inline">
+                {socketStatus.connected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowUserSearch(true)}
+              className="px-4 py-2 bg-white text-indigo-600 rounded-full font-medium hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600 shadow-md flex items-center transition-all duration-200 transform hover:scale-105"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              New Message
+            </button>
+          </div>
         </div>
       </header>
-      <div className="flex-1 grid grid-cols-12 overflow-hidden shadow-inner max-w-7xl mx-auto w-full bg-white rounded-lg my-4">
-        <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-gray-200 overflow-y-auto">
+      
+      {/* Socket error message */}
+      {socketStatus.error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mx-4 mt-2 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p>Connection error: {socketStatus.error}. Messages may not be delivered in real-time.</p>
+          </div>
+        </div>
+      )}
+      
+      <div className="flex-1 grid grid-cols-12 overflow-hidden shadow-xl max-w-7xl mx-auto w-full bg-white rounded-xl my-4 border border-gray-100">
+        <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-gray-200 overflow-y-auto bg-white rounded-l-xl">
           <ConversationsList
             onSelectUser={handleSelectUser}
             selectedUserId={selectedUserId}
           />
         </div>
-        <div className="col-span-12 md:col-span-8 lg:col-span-9 flex flex-col">
+        <div className="col-span-12 md:col-span-8 lg:col-span-9 flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-r-xl">
           {/* Render Conversation only when selectedUserId exists */}
           {selectedUserId ? (
             <Conversation
@@ -157,27 +212,35 @@ const Messaging = () => {
               socket={socket}
             />
           ) : (
-            <div className="h-full flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                  <svg className="h-6 w-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white rounded-r-xl">
+              <div className="text-center p-8 max-w-md">
+                <div className="h-20 w-20 rounded-full bg-gradient-to-r from-purple-400 to-indigo-500 flex items-center justify-center mx-auto mb-6 shadow-lg transform hover:scale-105 transition-transform duration-300">
+                  <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">Select a Conversation</h3>
-                <p className="text-sm text-gray-500">Choose a conversation from the list or start a new one</p>
+                <h3 className="text-2xl font-medium text-gray-900 mb-3">Your Messages</h3>
+                <p className="text-gray-600 mb-8">Connect with other users to discuss lost and found items</p>
+                <button 
+                  onClick={() => setShowUserSearch(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full font-medium hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-md flex items-center mx-auto transform hover:scale-105"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Start a New Conversation
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
       {/* User Search Modal - Render based on showUserSearch state */}
-      {/* Since we ensured 'user' is non-null before this point, we don't need the '&& user' check here */}
-      {showUserSearch && ( // Removed '&& user'
+      {showUserSearch && (
         <UserSearch
           onSelectUser={handleSelectUser}
           onClose={() => setShowUserSearch(false)}
-          currentUser={user} // Pass the confirmed non-null user
+          currentUser={user}
         />
       )}
     </div>

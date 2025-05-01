@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { searchUsers } from '../../api/messages';
-// Removed useAuth import as currentUser is now passed as a prop
 
 const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
-  // Removed: const { user: currentUser } = useAuth(); - Now using the prop
+  // Using currentUser prop passed from parent component
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,9 +31,9 @@ const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
   }, [searchQuery]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md animate-fadeIn">
-        <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-lg">
+    <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-fadeIn transform transition-all duration-300">
+        <div className="p-4 border-b flex justify-between items-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-xl">
           <h2 className="text-xl font-semibold flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -43,7 +42,7 @@ const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
           </h2>
           <button
             onClick={onClose}
-            className="text-white hover:text-gray-200 transition-colors"
+            className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white hover:bg-opacity-20"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -63,11 +62,11 @@ const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search users..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm bg-gray-50 hover:bg-white transition-colors duration-200"
             />
             {loading && (
               <div className="absolute right-3 top-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500"></div>
               </div>
             )}
           </div>
@@ -99,10 +98,10 @@ const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
                         console.error('Invalid user or missing ID:', user);
                       }
                     }}
-                    className="w-full p-4 flex items-center space-x-4 hover:bg-blue-50 transition-colors text-left"
+                    className="w-full p-4 flex items-center space-x-4 hover:bg-indigo-50 transition-all duration-200 text-left rounded-md hover:shadow-sm"
                   >
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <span className="text-blue-600 font-semibold text-lg">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-md transform transition-transform duration-200 hover:scale-105">
+                      <span className="text-white font-semibold text-lg">
                         {user.firstName ? user.firstName[0] : '?'}
                         {user.lastName ? user.lastName[0] : '?'}
                       </span>

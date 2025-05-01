@@ -64,11 +64,16 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="sticky top-0 bg-white p-4 border-b shadow-sm z-10">
-        <h2 className="text-xl font-semibold text-gray-800">Messages</h2>
+    <div className="h-full flex flex-col bg-gradient-to-b from-white to-indigo-50">
+      <div className="sticky top-0 bg-gradient-to-r from-indigo-100 to-purple-100 p-4 border-b shadow-sm z-10">
+        <h2 className="text-xl font-semibold text-indigo-800 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          Messages
+        </h2>
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto divide-y divide-gray-200">
         {conversations.map((conversation) => {
           const isUnread = conversation.lastMessage && !conversation.lastMessage.isRead && 
                           conversation.lastMessage.senderId !== (user?._id || user?.id);
@@ -84,26 +89,26 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
             <div
               key={conversation.otherUser.id}
               onClick={() => onSelectUser(conversation.otherUser.id)}
-              className={`p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors ${
-                selectedUserId === conversation.otherUser.id ? 'bg-blue-50' : ''
-              } ${isUnread ? 'bg-blue-50' : ''}`}
+              className={`p-4 hover:bg-indigo-50 cursor-pointer transition-all duration-200 ${
+                selectedUserId === conversation.otherUser.id ? 'bg-indigo-100' : ''
+              } ${isUnread ? 'bg-purple-50' : ''}`}
             >
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 relative">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-blue-600 font-medium">
-                      {conversation.otherUser.firstName?.[0]}
-                      {conversation.otherUser.lastName?.[0]}
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shadow-md transform transition-transform duration-200 hover:scale-105">
+                    <span className="text-white font-medium">
+                      {conversation.otherUser.firstName?.[0] || '?'}
+                      {conversation.otherUser.lastName?.[0] || ''}
                     </span>
                   </div>
                   {isUnread && (
-                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500"></span>
+                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-pink-500 animate-pulse shadow-sm"></span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className={`text-sm font-semibold ${isUnread ? 'text-blue-800' : 'text-gray-900'} truncate`}>
-                      {conversation.otherUser.firstName} {conversation.otherUser.lastName}
+                    <h3 className={`text-sm font-semibold ${isUnread ? 'text-indigo-800' : 'text-gray-900'} truncate`}>
+                      {conversation.otherUser.firstName || 'Unknown'} {conversation.otherUser.lastName || ''}
                     </h3>
                     <span className="text-xs text-gray-500">
                       {lastMessageTime && (
@@ -114,11 +119,19 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
                     </span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <p className={`text-sm ${isUnread ? 'text-gray-900 font-medium' : 'text-gray-600'} truncate`}>
+                    <p className={`text-sm ${isUnread ? 'text-gray-900 font-medium' : 'text-gray-600'} truncate max-w-[180px]`}>
                       {conversation.lastMessage?.content || 'Start a conversation'}
+                      {conversation.lastMessage?.attachmentUrl && (
+                        <span className="ml-1 inline-flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          </svg>
+                          {conversation.lastMessage.attachmentUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? 'Image' : 'File'}
+                        </span>
+                      )}
                     </p>
                     {isUnread && (
-                      <span className="ml-2 flex-shrink-0 inline-block h-5 w-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
+                      <span className="ml-2 flex-shrink-0 inline-block h-5 w-5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs flex items-center justify-center shadow-sm">
                         1
                       </span>
                     )}

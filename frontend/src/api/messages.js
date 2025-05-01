@@ -53,8 +53,43 @@ export const initializeSocket = (token) => {
   console.log('[initializeSocket] Initializing with token:', token.substring(0, 10) + '...');
   
   try {
+    // Parse the token to get the user ID if possible
+    let userId = null;
+    try {
+      // JWT tokens are in format: header.payload.signature
+      // We need the payload part which is the second part
+      const payload = token.split('.')[1];
+      if (payload) {
+        // Decode the base64 payload
+        const decodedPayload = JSON.parse(atob(payload));
+        // The JWT strategy in backend uses 'sub' for the user ID
+        userId = decodedPayload.sub;
+        console.log('[initializeSocket] Extracted user ID from token:', userId);
+      }
+    } catch (parseError) {
+      console.error('[initializeSocket] Could not parse token for user ID:', parseError);
+    }
+    
+    // Get user from localStorage as fallback
+    if (!userId) {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        userId = storedUser?._id || storedUser?.id;
+        console.log('[initializeSocket] Using user ID from localStorage:', userId);
+      } catch (storageError) {
+        console.error('[initializeSocket] Could not get user ID from localStorage:', storageError);
+      }
+    }
+    
+    // Make sure we have a token in the correct format for the WebSocket connection
+    // The backend expects the raw token without the Bearer prefix
+    const cleanToken = token.startsWith('Bearer ') ? token.substring(7) : token;
+    
     const socket = io(API_URL, {
-      auth: { token },
+      auth: { 
+        token: cleanToken, // Make sure we're sending the clean token
+        userId // Explicitly include userId in the auth object
+      },
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -63,6 +98,11 @@ export const initializeSocket = (token) => {
     // Add connection event listeners for debugging
     socket.on('connect', () => {
       console.log('[Socket] Connected successfully with ID:', socket.id);
+      // Emit an authentication event after connection with the correct userId
+      if (userId) {
+        socket.emit('authenticate', { userId, token: cleanToken });
+        console.log('[Socket] Sent authentication event with userId:', userId);
+      }
     });
     
     socket.on('connect_error', (error) => {
