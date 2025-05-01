@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL = "http://localhost:3001/found-items";
+const ML_SERVER_URL = "http://localhost:5001/upload-found-item";
 
 // ✅ GET all found items
 export const getFoundItems = async () => {
@@ -109,5 +110,30 @@ export const deleteFoundItem = async (id) => {
   } catch (error) {
     console.error(`Error deleting found item with ID ${id}:`, error);
     throw error;
+  }
+};
+
+// Get category prediction from ML model
+export const getPredictedCategory = async (imageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    const response = await axios.post(ML_SERVER_URL, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      withCredentials: false  // Add this to handle CORS
+    });
+
+    // Check if we got a valid response
+    if (response.data && response.data.category) {
+      return response.data.category;
+    }
+    console.error("Unexpected response format:", response.data);
+    return "Unknown";
+  } catch (error) {
+    console.error("Error getting category prediction:", error);
+    return "Unknown";
   }
 };

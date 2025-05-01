@@ -30,14 +30,13 @@ export const createLostItem = async (itemData) => {
 
       // Create form data with binary image
       const formData = new FormData();
-      Object.keys(itemData).forEach(key => {
-        if (key === 'image') {
-          formData.append('image', imageBuffer);
-          formData.append('imageContentType', itemData.image.type);
-        } else {
-          formData.append(key, itemData[key]);
-        }
-      });
+      formData.append('userId', itemData.userId);
+      formData.append('description', itemData.description);
+      formData.append('location', itemData.location);
+      formData.append('contactNumber', itemData.contactNumber);
+      formData.append('category', itemData.category);
+      formData.append('image', imageBuffer);
+      formData.append('imageContentType', itemData.image.type);
 
       const response = await axios.post(API_BASE_URL, formData, {
         headers: {
@@ -46,12 +45,21 @@ export const createLostItem = async (itemData) => {
       });
       return response.data;
     } else {
-      // If no image, send regular JSON
-      const response = await axios.post(API_BASE_URL, itemData);
+      // If no image, send regular JSON data
+      const response = await axios.post(API_BASE_URL, {
+        userId: itemData.userId,
+        description: itemData.description,
+        location: itemData.location,
+        contactNumber: itemData.contactNumber,
+        category: itemData.category
+      });
       return response.data;
     }
   } catch (error) {
     console.error("Error adding lost item:", error);
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
     throw error;
   }
 };

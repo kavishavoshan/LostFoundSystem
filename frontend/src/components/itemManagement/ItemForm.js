@@ -4,7 +4,6 @@ import { createLostItem } from '../../api/lostItems';
 import { createFoundItem } from '../../api/foundItems';
 import { useAuth } from '../../context/AuthContext';
 import { Spinner } from '../UI/Spinner';
-import { getCurrentUser } from '../../api/user';
 
 const CATEGORIES = [
   "Card",
@@ -22,6 +21,7 @@ const CATEGORIES = [
 
 const ItemForm = ({ type = 'lost', onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isPredicting, setIsPredicting] = useState(false);
   const { user: authUser } = useAuth();
   const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -34,14 +34,20 @@ const ItemForm = ({ type = 'lost', onClose }) => {
     reset
   } = useForm({
     defaultValues: {
-      contactNumber: '',
+      contactNumber: authUser?.mobileNumber || authUser?.phoneNumber || '',
       location: '',
       description: '',
       category: 'Unknown',
       image: null,
-      userId: ''
     }
   });
+
+  useEffect(() => {
+    if (authUser) {
+      // Pre-populate form with user data when available
+      setValue('contactNumber', authUser.mobileNumber || authUser.phoneNumber || '');
+    }
+  }, [authUser, setValue]);
 
   const imageField = watch('image');
 
@@ -49,9 +55,37 @@ const ItemForm = ({ type = 'lost', onClose }) => {
     if (imageField instanceof File) {
       const url = URL.createObjectURL(imageField);
       setPreviewUrl(url);
+
+      // Get category prediction for the image
+      const predictCategory = async () => {
+        setIsPredicting(true);
+        try {
+          const formData = new FormData();
+          formData.append('image', imageField);
+          
+          const response = await fetch('http://localhost:5001/predict', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          if (data.predicted_category) {
+            setValue('category', data.predicted_category);
+          } else {
+            setValue('category', 'Unknown');
+          }
+        } catch (error) {
+          console.error('Error predicting category:', error);
+          setValue('category', 'Unknown');
+        } finally {
+          setIsPredicting(false);
+        }
+      };
+      
+      predictCategory();
       return () => URL.revokeObjectURL(url);
     }
-  }, [imageField]);
+  }, [imageField, setValue]);
 
   const handleImageChange = async (event) => {
     const file = event.target.files?.[0];
@@ -64,12 +98,17 @@ const ItemForm = ({ type = 'lost', onClose }) => {
     try {
       setIsLoading(true);
 
+      if (!authUser?.id) {
+        throw new Error('User ID not found. Please log in again.');
+      }
+
       const submitPayload = {
-        ...data,
-        userId: authUser?.id,
-        location: data.location.trim(),
+        userId: authUser.id,
         description: data.description.trim(),
+        contactNumber: data.contactNumber.trim(),
         category: data.category,
+        image: data.image,
+        location: data.location.trim(),
       };
 
       const response = type === 'lost'
@@ -83,7 +122,15 @@ const ItemForm = ({ type = 'lost', onClose }) => {
 
     } catch (error) {
       console.error(`Error creating ${type} item:`, error);
-      alert(`Failed to create ${type} item. Please try again.`);
+      let errorMessage = `Failed to create ${type} item. `;
+      if (error.response?.data?.message) {
+        errorMessage += error.response.data.message;
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +138,7 @@ const ItemForm = ({ type = 'lost', onClose }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Contact Number */}
+      {/* Contact Number field */}
       <div>
         <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700">Contact Number</label>
         <input
@@ -100,11 +147,12 @@ const ItemForm = ({ type = 'lost', onClose }) => {
           {...register('contactNumber', {
             required: 'Contact number is required',
             pattern: {
-              value: /^\d{10}$/,
+              value: /^[0-9]{10}$/,
               message: 'Please enter a valid 10-digit phone number'
             }
           })}
-          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 ${errors.contactNumber ? 'border-red-500 ring-red-500' : ''}`}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+          placeholder="Enter your contact number"
         />
         {errors.contactNumber && (
           <p className="mt-1 text-sm text-red-600">{errors.contactNumber.message}</p>
@@ -130,11 +178,14 @@ const ItemForm = ({ type = 'lost', onClose }) => {
 
       {/* Category */}
       <div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700">Item Category</label>
+        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+          Item Category {isPredicting && <span className="text-sm text-gray-500 ml-2">(Predicting...)</span>}
+        </label>
         <select
           id="category"
+          disabled={isPredicting}
           {...register('category', { required: 'Please select a category' })}
-          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 ${errors.category ? 'border-red-500 ring-red-500' : ''}`}
+          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 ${errors.category ? 'border-red-500 ring-red-500' : ''} ${isPredicting ? 'opacity-50 cursor-wait' : ''}`}
         >
           {CATEGORIES.map((category) => (
             <option key={category} value={category}>{category}</option>
@@ -165,12 +216,8 @@ const ItemForm = ({ type = 'lost', onClose }) => {
                   className="sr-only"
                   {...register('image', {
                     required: type === 'found' ? 'Image is required for found items' : false,
-                    validate: {
-                      fileSize: file => !file || file.size <= 10 * 1024 * 1024 || 'File size must be less than 10MB',
-                      fileType: file => !file || file.type.startsWith('image/') || 'Please upload an image file'
-                    }
+                    onChange: (e) => handleImageChange(e)
                   })}
-                  onChange={handleImageChange}
                 />
               </label>
             </div>
