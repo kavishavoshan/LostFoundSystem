@@ -3,6 +3,8 @@ import { getMessages, sendMessage, deleteMessage, markMessageAsRead } from '../.
 import { format } from 'date-fns';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+// Import necessary icons, including PaperClipIcon
+import { PaperClipIcon, TrashIcon, PencilIcon, XMarkIcon, PaperAirplaneIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline'; 
 
 const API_URL = 'http://localhost:3001';
 
@@ -551,268 +553,171 @@ const Conversation = ({ userId, socket }) => {
   
   // Check if a message can be edited (within 15 minutes)
   const canEditMessage = (message) => {
-    if (message.senderId !== currentUserId) return false;
-    
-    const createdAt = new Date(message.createdAt);
-    const now = new Date();
-    const diffInMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
-    
-    return diffInMinutes <= 15;
+    if (!message || message.senderId !== currentUserId) return false;
+    const messageTime = new Date(message.createdAt).getTime();
+    const now = Date.now();
+    return (now - messageTime) < 15 * 60 * 1000; // 15 minutes
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 bg-white border-b flex justify-between items-center shadow-sm">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3 shadow-sm">
-            <span className="text-blue-600 font-semibold">
-              {messages.length > 0 && messages[0].receiverId !== currentUserId ? 
-                getUserName(messages[0], false).charAt(0).toUpperCase() : 
-                userId && userId.charAt(0).toUpperCase()}
-            </span>
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Header (Optional - Can display other user's name) */}
+      {/* <div className="p-4 border-b bg-white shadow-sm">
+        <h2 className="font-semibold text-lg">Chat with {userId}</h2>
+      </div> */}
+
+      {/* Messages Area - Added custom scrollbar styles */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-gray-100">
+        {loading && (
+          <div className="flex justify-center items-center h-full">
+            <ArrowPathIcon className="h-6 w-6 text-gray-500 animate-spin" />
+            <span className="ml-2 text-gray-500">Loading messages...</span>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800">
-              {messages.length > 0 && messages[0].receiverId !== currentUserId ? 
-                getUserName(messages[0], false) : 'Chat'}
-            </h2>
-            {otherUserTyping && (
-              <div className="text-xs text-gray-500 animate-pulse flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                typing...
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center text-gray-500">
-          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
-          const isCurrentUser = message.senderId === currentUserId;
-          const messageId = message.id || message._id;
-          const canEdit = canEditMessage(message);
-          
+        )}
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        {!loading && messages.map((message) => {
+          const isSender = message.senderId === currentUserId;
+          const messageId = message.id || message._id; // Use consistent ID
+          const showEditDelete = isSender && canEditMessage(message);
+
           return (
-            <div
-              key={messageId || `msg-${Date.now()}-${Math.random()}`}
-              className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`group relative max-w-[80%] ${isCurrentUser ? 'order-1' : 'order-2'}`}>
-                {!isCurrentUser && (
-                  <div className="absolute -left-10 top-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-700 text-xs font-semibold">
-                      {getUserName(message, false).charAt(0).toUpperCase()}
-                    </span>
+            // Add group class for hover effects on children
+            <div key={messageId} className={`flex group ${isSender ? 'justify-end' : 'justify-start'}`}>
+              <div className={`relative max-w-xs lg:max-w-md px-3 py-2 rounded-xl shadow-md ${isSender ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-100'}`}>
+                {editingMessageId === messageId ? (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="flex-grow p-1 border rounded text-black text-sm"
+                      autoFocus
+                    />
+                    <button onClick={() => handleEditMessage(messageId, editContent)} className="text-green-600 hover:text-green-800">
+                      <CheckIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => setEditingMessageId(null)} className="text-red-600 hover:text-red-800">
+                      <XMarkIcon className="h-5 w-5" />
+                    </button>
                   </div>
-                )}
-                
-                <div className="flex flex-col">
-                  <span className={`text-xs text-gray-500 mb-1 ${isCurrentUser ? 'text-right mr-1' : 'text-left ml-1'}`}>
-                    {isCurrentUser ? getUserName(message, true) : getUserName(message, false)}
-                  </span>
-                  
-                  <div
-                    className={`relative px-4 py-2 rounded-lg ${
-                      isCurrentUser
-                        ? 'bg-blue-500 text-white rounded-br-none'
-                        : 'bg-gray-100 text-gray-900 rounded-bl-none'
-                    }`}
-                  >
-                    {/* Message bubble tail */}
-                    <span className={`absolute bottom-0 ${isCurrentUser ? 'right-0 -mb-2 -mr-1' : 'left-0 -mb-2 -ml-1'}`}>
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0 0H20L0 20V0Z" fill={isCurrentUser ? '#3B82F6' : '#F3F4F6'} />
-                      </svg>
-                    </span>
-                  
-                    {editingMessageId === messageId ? (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full px-2 py-1 rounded border text-gray-900"
-                        />
-                        <div className="flex justify-end space-x-2">
-                          <button
-                            onClick={() => setEditingMessageId(null)}
-                            className="text-xs hover:underline"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => handleEditMessage(messageId, editContent)}
-                            className="text-xs hover:underline"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm">{message.content}</p>
-                        {message.isEdited && (
-                          <span className={`text-xs ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
-                            (edited)
-                          </span>
-                        )}
-                        {message.attachmentUrl && (
-                          <div className="mt-2">
-                            {message.attachmentUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                              <img
-                                src={message.attachmentUrl}
-                                alt="attachment"
-                                className="max-w-full rounded"
-                                onClick={() => window.open(message.attachmentUrl, '_blank')}
-                                style={{ cursor: 'pointer' }}
-                              />
-                            ) : (
-                              <a
-                                href={message.attachmentUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm underline flex items-center"
-                              >
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                                </svg>
-                                View attachment
-                              </a>
-                            )}
-                          </div>
-                        )}
-                        <div className={`flex items-center ${isCurrentUser ? 'justify-end' : 'justify-start'} mt-1 text-xs ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'}`}>
-                          {format(new Date(message.createdAt), 'h:mm a')}
-                          {isCurrentUser && (
-                            <span className="ml-1" title={message.isRead ? "Read" : "Delivered"}>
-                              {message.isRead ? (
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                                </svg>
-                              ) : (
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
-                                </svg>
-                              )}
+                ) : (
+                  <div className="flex flex-col">
+                    {message.attachmentUrl && (
+                      <div className="mb-2">
+                        {message.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null ? (
+                           <img src={message.attachmentUrl} alt="Attachment" className="max-w-full h-auto rounded-lg cursor-pointer" onClick={() => window.open(message.attachmentUrl, '_blank')} />
+                        ) : (
+                          <a href={message.attachmentUrl} target="_blank" rel="noopener noreferrer" className={`flex items-center space-x-2 p-2 rounded-lg ${isSender ? 'bg-blue-400 hover:bg-blue-300' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                            <PaperClipIcon className={`h-5 w-5 ${isSender ? 'text-blue-100' : 'text-gray-600'}`} />
+                            <span className={`text-sm underline ${isSender ? 'text-white' : 'text-blue-700'}`}>
+                              {message.attachmentUrl.split('-').pop().substring(0, 20)}...
                             </span>
-                          )}
-                        </div>
-                      </>
+                          </a>
+                        )}
+                      </div>
                     )}
-                  </div>
-                </div>
-                
-                {isCurrentUser && canEdit && (
-                  <div className="absolute top-0 right-0 hidden group-hover:flex items-center space-x-1 -mr-20 bg-white rounded-lg shadow-md px-2 py-1">
-                    <button
-                      onClick={() => {
-                        setEditingMessageId(messageId);
-                        setEditContent(message.content);
-                      }}
-                      className="text-blue-500 hover:text-blue-600 text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteMessage(messageId)}
-                      className="text-red-500 hover:text-red-600 text-sm"
-                    >
-                      Delete
-                    </button>
+                    {/* Render message content only if it exists */}
+                    {message.content && message.content.trim() !== '' && (
+                      <p className="text-sm break-words">{message.content}</p>
+                    )}
+                    <div className={`text-xs mt-1 ${isSender ? 'text-blue-100' : 'text-gray-400'} flex items-center ${isSender ? 'justify-end' : 'justify-start'} space-x-1.5`}>
+                      <span>{format(new Date(message.createdAt), 'p')}</span>
+                      {message.isEdited && <span className="italic text-xs">(edited)</span>}
+                      {isSender && message.isRead && (
+                        <CheckIcon className="h-4 w-4 text-green-300" title={`Read at ${format(new Date(message.readAt), 'p')}`} />
+                      )}
+                      {isSender && !message.isRead && (
+                        <CheckIcon className="h-4 w-4 text-gray-400" title={`Sent`} />
+                      )}
+                    </div>
+                    {/* Edit/Delete buttons shown on hover for sender */}
+                    {showEditDelete && (
+                      <div className={`absolute -top-2 ${isSender ? '-left-8' : '-right-8'} flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                        <button
+                          onClick={() => {
+                            setEditingMessageId(messageId);
+                            setEditContent(message.content);
+                          }}
+                          className={`p-1 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 shadow-sm`}
+                          title="Edit"
+                        >
+                          <PencilIcon className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMessage(messageId)}
+                          className={`p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600 shadow-sm`}
+                          title="Delete"
+                        >
+                          <TrashIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           );
         })}
-        <div ref={messagesEndRef} />
+        {/* Typing Indicator */}
+        {otherUserTyping && (
+          <div className="flex justify-start">
+            <div className="px-3 py-1.5 rounded-lg shadow bg-gray-200 text-gray-600 text-sm italic">
+              typing...
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} /> {/* Element to scroll to */}
       </div>
 
-      {otherUserTyping && (
-        <div className="px-4 py-2 bg-gray-50 border-t">
-          <div className="flex items-center text-gray-500">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '600ms' }}></div>
-            </div>
-            <span className="ml-2 text-sm">User is typing...</span>
-          </div>
-        </div>
-      )}
-
-      <div className="sticky bottom-0 bg-white border-t z-10">
+      {/* Input Area */}
+      <div className="p-3 border-t bg-gradient-to-t from-gray-100 to-white">
         {selectedFile && (
-          <div className="px-4 pt-2 flex items-center">
-            <span className="text-xs text-gray-500 flex items-center flex-1 truncate">
-              <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-              <span className="truncate">{selectedFile.name}</span> ({Math.round(selectedFile.size / 1024)} KB)
-            </span>
-            <button 
-              type="button" 
-              className="ml-2 text-xs text-red-500 hover:text-red-700 flex-shrink-0"
-              onClick={() => setSelectedFile(null)}
-            >
-              Remove
+          <div className="mb-2 flex items-center justify-between p-2 bg-gray-100 rounded-lg border border-gray-200">
+            <div className="flex items-center space-x-2 overflow-hidden">
+              <PaperClipIcon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+              <span className="text-sm text-gray-700 truncate">{selectedFile.name}</span>
+            </div>
+            <button onClick={() => { setSelectedFile(null); if(fileInputRef.current) fileInputRef.current.value = null; setUploadProgress(0); }} className="text-red-500 hover:text-red-700 flex-shrink-0 ml-2">
+              <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
         )}
         {uploadProgress > 0 && uploadProgress < 100 && (
-          <div className="px-4 pt-2">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
+          <div className="w-full bg-gray-200 rounded-full h-1 mb-2 dark:bg-gray-700">
+            <div className="bg-blue-500 h-1 rounded-full transition-all duration-300 ease-out" style={{ width: `${uploadProgress}%` }}></div>
           </div>
         )}
-        <form onSubmit={handleSendMessage} className="p-4">
-          <div className="flex space-x-2">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 text-gray-500 hover:text-gray-700 relative flex-shrink-0"
-              title="Attach a file"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-              {selectedFile && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></div>
-              )}
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              className="hidden"
-              accept="image/*,.pdf,.doc,.docx"
-            />
-            <input
-              type="text"
-              value={newMessage}
-              onChange={handleTyping}
-              placeholder="Type a message..."
-              className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <button
-              type="submit"
-              disabled={(!newMessage.trim() && !selectedFile) || loading}
-              className="px-6 py-2 bg-blue-500 text-white rounded-full font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-            >
-              Send
-            </button>
-          </div>
+        <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current.click()}
+            className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 transition-colors"
+            title="Attach file"
+          >
+            <PaperClipIcon className="h-5 w-5" />
+          </button>
+          <input
+            type="text"
+            value={newMessage}
+            onChange={handleTyping} // Use handleTyping for input changes
+            placeholder="Type a message..."
+            className="flex-1 border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+            disabled={(!newMessage.trim() && !selectedFile) || loading || (uploadProgress > 0 && uploadProgress < 100)}
+          >
+            <PaperAirplaneIcon className="h-5 w-5" />
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+            accept="image/*,application/pdf,.doc,.docx"
+          />
         </form>
       </div>
     </div>

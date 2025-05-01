@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getConversations } from '../../api/messages';
-import { format } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
+import { PaperClipIcon, ChatBubbleLeftRightIcon, InboxIcon } from '@heroicons/react/24/outline'; // Import icons
 
 const ConversationsList = ({ onSelectUser, selectedUserId }) => {
   const { user } = useAuth(); // Get user from AuthContext
@@ -39,103 +40,115 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        {/* Improved Loading Spinner */}
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+        <span className="ml-3 text-gray-600">Loading conversations...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full p-4">
-        <div className="text-red-500">{error}</div>
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+        <InboxIcon className="h-12 w-12 text-red-400 mb-3" />
+        <p className="text-red-600 font-semibold mb-1">Error Loading</p>
+        <p className="text-sm text-gray-500">{error}</p>
+        <button 
+          onClick={() => fetchConversations(user?._id || user?.id)}
+          className="mt-4 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md text-sm hover:bg-indigo-200 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-4">
-        <div className="text-gray-500 text-center">
-          <p className="text-lg font-medium mb-2">No conversations yet</p>
-          <p className="text-sm">Start a new conversation by selecting a user</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+        <ChatBubbleLeftRightIcon className="h-12 w-12 text-gray-400 mb-3" />
+        <p className="text-gray-600 font-medium mb-1">No conversations yet</p>
+        <p className="text-sm text-gray-500">Start a new chat to see it here.</p>
       </div>
     );
   }
 
+  // Helper to format time
+  const formatLastMessageTime = (time) => {
+    if (!time) return '';
+    const date = new Date(time);
+    const now = new Date();
+    const diffInDays = (now.setHours(0,0,0,0) - date.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24);
+
+    if (diffInDays < 1) {
+      return format(new Date(time), 'p'); // e.g., 4:30 PM
+    } else if (diffInDays < 7) {
+      return format(new Date(time), 'eee'); // e.g., 'Mon'
+    } else {
+      return format(new Date(time), 'MMM d'); // e.g., 'Mar 10'
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col bg-gradient-to-b from-white to-indigo-50">
-      <div className="sticky top-0 bg-gradient-to-r from-indigo-100 to-purple-100 p-4 border-b shadow-sm z-10">
-        <h2 className="text-xl font-semibold text-indigo-800 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-          Messages
+    <div className="h-full flex flex-col bg-white">
+      {/* Header */}
+      <div className="sticky top-0 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 border-b border-gray-200 shadow-sm z-10">
+        <h2 className="text-lg font-semibold text-indigo-800 flex items-center">
+          <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2 text-indigo-600" />
+          Conversations
         </h2>
       </div>
-      <div className="flex-1 overflow-y-auto divide-y divide-gray-200">
+      {/* List */}
+      <div className="flex-1 overflow-y-auto divide-y divide-gray-100 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {conversations.map((conversation) => {
-          const isUnread = conversation.lastMessage && !conversation.lastMessage.isRead && 
-                          conversation.lastMessage.senderId !== (user?._id || user?.id);
-          const lastMessageTime = conversation.lastMessage?.createdAt ? 
-                                 new Date(conversation.lastMessage.createdAt) : null;
-          const today = new Date();
-          const isToday = lastMessageTime && 
-                         lastMessageTime.getDate() === today.getDate() &&
-                         lastMessageTime.getMonth() === today.getMonth() &&
-                         lastMessageTime.getFullYear() === today.getFullYear();
-          
+          const otherUser = conversation.otherUser;
+          const lastMessage = conversation.lastMessage;
+          const currentAuthUserId = user?._id || user?.id;
+          const isUnread = lastMessage && !lastMessage.isRead && lastMessage.senderId !== currentAuthUserId;
+          const lastMessageTime = lastMessage?.createdAt;
+          const isSelected = selectedUserId === otherUser.id;
+
+          // Generate a placeholder avatar if needed
+          const avatarText = `${otherUser.firstName?.[0] || ''}${otherUser.lastName?.[0] || ''}`.toUpperCase() || '?';
+
           return (
             <div
-              key={conversation.otherUser.id}
-              onClick={() => onSelectUser(conversation.otherUser.id)}
-              className={`p-4 hover:bg-indigo-50 cursor-pointer transition-all duration-200 ${
-                selectedUserId === conversation.otherUser.id ? 'bg-indigo-100' : ''
-              } ${isUnread ? 'bg-purple-50' : ''}`}
+              key={otherUser.id}
+              onClick={() => onSelectUser(otherUser.id)}
+              className={`p-3 hover:bg-indigo-50 cursor-pointer transition-colors duration-150 flex items-center space-x-3 ${isSelected ? 'bg-indigo-100' : ''}`}
             >
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shadow-md transform transition-transform duration-200 hover:scale-105">
-                    <span className="text-white font-medium">
-                      {conversation.otherUser.firstName?.[0] || '?'}
-                      {conversation.otherUser.lastName?.[0] || ''}
-                    </span>
-                  </div>
-                  {isUnread && (
-                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-pink-500 animate-pulse shadow-sm"></span>
-                  )}
+              {/* Avatar */}
+              <div className="flex-shrink-0 relative">
+                <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center shadow ${isSelected ? 'ring-2 ring-offset-1 ring-indigo-400' : ''}`}>
+                  <span className="text-white font-medium text-sm">{avatarText}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className={`text-sm font-semibold ${isUnread ? 'text-indigo-800' : 'text-gray-900'} truncate`}>
-                      {conversation.otherUser.firstName || 'Unknown'} {conversation.otherUser.lastName || ''}
-                    </h3>
-                    <span className="text-xs text-gray-500">
-                      {lastMessageTime && (
-                        isToday ? 
-                          format(lastMessageTime, 'h:mm a') : 
-                          format(lastMessageTime, 'MMM d')
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className={`text-sm ${isUnread ? 'text-gray-900 font-medium' : 'text-gray-600'} truncate max-w-[180px]`}>
-                      {conversation.lastMessage?.content || 'Start a conversation'}
-                      {conversation.lastMessage?.attachmentUrl && (
-                        <span className="ml-1 inline-flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                          </svg>
-                          {conversation.lastMessage.attachmentUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? 'Image' : 'File'}
-                        </span>
-                      )}
-                    </p>
-                    {isUnread && (
-                      <span className="ml-2 flex-shrink-0 inline-block h-5 w-5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs flex items-center justify-center shadow-sm">
-                        1
-                      </span>
+                {isUnread && (
+                  <span className="absolute -top-0.5 -right-0.5 block h-3 w-3 rounded-full bg-pink-500 border-2 border-white"></span>
+                )}
+              </div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline justify-between">
+                  <h3 className={`text-sm font-semibold ${isUnread ? 'text-gray-900' : 'text-gray-800'} truncate`}>
+                    {otherUser.firstName || 'Unknown'} {otherUser.lastName || ''}
+                  </h3>
+                  <span className={`text-xs ${isUnread ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>
+                    {formatLastMessageTime(lastMessageTime)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-0.5">
+                  <p className={`text-xs ${isUnread ? 'text-gray-800 font-medium' : 'text-gray-500'} truncate max-w-[180px] flex items-center`}>
+                    {lastMessage?.senderId === currentAuthUserId && <span className="mr-1">You:</span>}
+                    {lastMessage?.attachmentUrl && (
+                      <PaperClipIcon className={`h-3 w-3 mr-1 ${isUnread ? 'text-gray-600' : 'text-gray-400'}`} />
                     )}
-                  </div>
+                    {lastMessage?.content || (lastMessage?.attachmentUrl ? (lastMessage.attachmentUrl.match(/\.(jpg|jpeg|png|gif)$/i) ? 'Image' : 'File') : 'No messages yet')}
+                  </p>
+                  {isUnread && (
+                    <span className="ml-2 flex-shrink-0 inline-block h-4 w-4 rounded-full bg-indigo-500 text-white text-[10px] flex items-center justify-center font-semibold shadow-sm">
+                      1 {/* Replace with actual unread count if available */}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

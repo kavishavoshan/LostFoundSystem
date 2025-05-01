@@ -197,14 +197,17 @@ const Messaging = () => {
         </div>
       )}
       
-      <div className="flex-1 grid grid-cols-12 overflow-hidden shadow-xl max-w-7xl mx-auto w-full bg-white rounded-xl my-4 border border-gray-100">
-        <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-gray-200 overflow-y-auto bg-white rounded-l-xl">
+      {/* Main Content Area - Adjusted grid and flex properties */}
+      <div className="flex-1 grid grid-cols-12 overflow-hidden shadow-xl max-w-7xl mx-auto w-full bg-white rounded-b-xl my-4 border border-gray-100">
+        {/* Conversation List - Ensure it can scroll if needed */}
+        <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-gray-200 overflow-y-auto bg-white rounded-bl-xl scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <ConversationsList
             onSelectUser={handleSelectUser}
             selectedUserId={selectedUserId}
           />
         </div>
-        <div className="col-span-12 md:col-span-8 lg:col-span-9 flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-r-xl">
+        {/* Conversation Area - Make it flex column and allow Conversation to take remaining height */}
+        <div className="col-span-12 md:col-span-8 lg:col-span-9 flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-br-xl overflow-hidden"> {/* Added overflow-hidden */}
           {/* Render Conversation only when selectedUserId exists */}
           {selectedUserId ? (
             <Conversation
@@ -212,7 +215,8 @@ const Messaging = () => {
               socket={socket}
             />
           ) : (
-            <div className="h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-white rounded-r-xl">
+            // Placeholder View - Centered content
+            <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-white rounded-br-xl p-4">
               <div className="text-center p-8 max-w-md">
                 <div className="h-20 w-20 rounded-full bg-gradient-to-r from-purple-400 to-indigo-500 flex items-center justify-center mx-auto mb-6 shadow-lg transform hover:scale-105 transition-transform duration-300">
                   <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
