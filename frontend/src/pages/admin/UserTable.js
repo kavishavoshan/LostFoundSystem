@@ -734,46 +734,88 @@ function UserTable() {
     try {
       const userInfo = getUserInfo(item.userId);
 
-      if (!userInfo.email) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Cannot send email - no email found for this user.",
-        });
-        return;
-      }
-
-      Swal.fire({
-        title: "Sending email...",
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
+      const { value: emailContent } = await Swal.fire({
+        title: "Compose Email",
+        html: `
+          <div class="text-left">
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2">To:</label>
+              <input 
+                id="swal-to" 
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                value="thinaldilmith2002@gmail.com" 
+                readonly
+              >
+            </div>
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2">Subject:</label>
+              <input 
+                id="swal-subject" 
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                value="Regarding your ${item.status} item (${item.category})"
+              >
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-bold mb-2">Message:</label>
+              <textarea 
+                id="swal-message" 
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32" 
+                placeholder="Type your message here..."
+              >Dear ${userInfo.name || "User"},
+  
+  This is regarding your ${item.status} item (${item.category}) at ${
+          item.location
+        }.
+  
+  </textarea>
+            </div>
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: "Send Email",
+        cancelButtonText: "Cancel",
+        preConfirm: () => {
+          return {
+            to: document.getElementById("swal-to").value,
+            subject: document.getElementById("swal-subject").value,
+            message: document.getElementById("swal-message").value,
+          };
         },
       });
 
-      // EmailJS service parameters
-      const templateParams = {
-        to_email: userInfo.email,
-        status: item.status,
-        category: item.category,
-        location: item.location,
-        description: item.description,
-        from_name: "Lost & Found Team",
-      };
+      if (emailContent) {
+        Swal.fire({
+          title: "Sending email...",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
 
-      // Send email using EmailJS
-      await emailjs.send(
-        "service_6kn06l7", // Your EmailJS Service ID
-        "template_your_template_id", // Your EmailJS Template ID
-        templateParams,
-        "lIwc1XWfTvsLQs0zu" // Your EmailJS User ID
-      );
+        // EmailJS service parameters
+        const templateParams = {
+          to_email: emailContent.to,
+          subject: emailContent.subject,
+          message: emailContent.message,
+          from_name: "RecLaim Lost & Found",
+          reply_to: "noreply@reclaim.com",
+        };
 
-      Swal.fire(
-        "Email Sent!",
-        `Your message has been sent to ${userInfo.email}.`,
-        "success"
-      );
+        // Send email using EmailJS
+        await emailjs.send(
+          "service_6kn06l7",
+          "template_szxuqi8",
+          templateParams,
+          "lIwc1XWfTvsLQs0zu"
+        );
+
+        Swal.fire(
+          "Email Sent!",
+          "Your message has been sent successfully.",
+          "success"
+        );
+      }
     } catch (error) {
       console.error("Error sending email:", error);
       Swal.fire({
