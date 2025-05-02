@@ -1,20 +1,35 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { getFoundItems } from '../api/foundItems';
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [recentItems, setRecentItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRecentItems = async () => {
       try {
         const items = await getFoundItems();
-        // Get the 5 most recent items
         const recent = items
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .slice(0, 5);
-        setRecentItems(recent);
+
+        // Convert binary image to base64
+        const updated = recent.map((item) => {
+          if (item.image && item.image.data) {
+            const base64String = Buffer.from(item.image.data).toString("base64");
+            const mimeType = item.image.contentType || "image/jpeg";
+            return {
+              ...item,
+              imageUrl: `data:${mimeType};base64,${base64String}`,
+            };
+          }
+          return { ...item };
+        });
+
+        setRecentItems(updated);
       } catch (error) {
         console.error("Error fetching recent items:", error);
       } finally {
@@ -37,7 +52,10 @@ const Home = () => {
         <p className="text-gray-600 mb-10">
           Reclaim helps you report, search, and recover lost and found items — quickly and easily.
         </p>
-        <button className="bg-orange-500 text-white px-6 py-2 rounded-full font-medium hover:bg-orange-600 transition">
+        <button
+          onClick={() => navigate("/itemDashboard")}
+          className="bg-orange-500 text-white px-6 py-2 rounded-full font-medium hover:bg-orange-600 transition"
+        >
           Lost & Found
         </button>
       </div>
@@ -61,9 +79,9 @@ const Home = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {recentItems.map((item) => (
               <div key={item._id} className="border rounded-xl overflow-hidden shadow hover:shadow-md transition bg-white">
-                {item.image ? (
+                {item.imageUrl ? (
                   <img
-                    src={item.image}
+                    src={item.imageUrl}
                     alt={item.itemName}
                     className="w-full h-48 object-cover"
                   />
