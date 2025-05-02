@@ -45,39 +45,138 @@ const TEST_MESSAGES = {
 };
 
 export const initializeSocket = (token) => {
-  const socket = io(API_URL, {
-    auth: { token },
-  });
-  return socket;
+  if (!token) {
+    console.error('[initializeSocket] ERROR: Token is undefined or empty');
+    return null;
+  }
+  
+  console.log('[initializeSocket] Initializing with token:', token.substring(0, 10) + '...');
+  
+  try {
+    // Parse the token to get the user ID if possible
+    let userId = null;
+    try {
+      // JWT tokens are in format: header.payload.signature
+      // We need the payload part which is the second part
+      const payload = token.split('.')[1];
+      if (payload) {
+        // Decode the base64 payload
+        const decodedPayload = JSON.parse(atob(payload));
+        // The JWT strategy in backend uses 'sub' for the user ID
+        userId = decodedPayload.sub;
+        console.log('[initializeSocket] Extracted user ID from token:', userId);
+      }
+    } catch (parseError) {
+      console.error('[initializeSocket] Could not parse token for user ID:', parseError);
+    }
+    
+    // Get user from localStorage as fallback
+    if (!userId) {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        userId = storedUser?._id || storedUser?.id;
+        console.log('[initializeSocket] Using user ID from localStorage:', userId);
+      } catch (storageError) {
+        console.error('[initializeSocket] Could not get user ID from localStorage:', storageError);
+      }
+    }
+    
+    // Make sure we have a token in the correct format for the WebSocket connection
+    // The backend expects the raw token without the Bearer prefix
+    const cleanToken = token.startsWith('Bearer ') ? token.substring(7) : token;
+    
+    const socket = io(API_URL, {
+      auth: { 
+        token: cleanToken, // Make sure we're sending the clean token
+        userId // Explicitly include userId in the auth object
+      },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+    
+    // Add connection event listeners for debugging
+    socket.on('connect', () => {
+      console.log('[Socket] Connected successfully with ID:', socket.id);
+      // Emit an authentication event after connection with the correct userId
+      if (userId) {
+        socket.emit('authenticate', { userId, token: cleanToken });
+        console.log('[Socket] Sent authentication event with userId:', userId);
+      }
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('[Socket] Connection error:', error.message);
+    });
+    
+    return socket;
+  } catch (error) {
+    console.error('[initializeSocket] Error creating socket:', error);
+    return null;
+  }
 };
 
 export const getConversations = async (userId) => {
   try {
-        if (!userId) {
-      console.error('Error: userId is required for getConversations');
+    if (!userId) {
+      console.error('[API getConversations] Error: userId is required');
       return []; // Or throw an error
     }
+    
+    // Check if Authorization header is set
+    const authHeader = axios.defaults.headers.common['Authorization'];
+    console.log('[API getConversations] Axios Authorization Header:', authHeader ? `${authHeader.substring(0, 15)}...` : 'NOT SET');
+    
+    // If header is not set, try to set it from localStorage
+    if (!authHeader) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        console.log('[API getConversations] Setting Authorization header from localStorage');
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      } else {
+        console.error('[API getConversations] No token in localStorage');
+      }
+    }
+    
+    console.log(`[API getConversations] Fetching conversations for user: ${userId}`);
     const response = await axios.get(`${API_URL}/messages/conversations?userId=${userId}`);
+    console.log(`[API getConversations] Received ${response.data.length} conversations`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching conversations:', error);
+    console.error('[API getConversations] Error:', error.response?.status, error.response?.data || error.message);
     return [];
   }
 };
 
 export const getMessages = async (otherUserId, currentUserId) => {
   if (!currentUserId || !otherUserId) {
-    const errorMsg = 'Error: currentUserId and otherUserId are required for getMessages';
+    const errorMsg = '[API getMessages] Error: currentUserId and otherUserId are required';
     console.error(errorMsg, { currentUserId, otherUserId });
     throw new Error(errorMsg); // Throw error if IDs are missing
   }
+  
   try {
-    console.log(`[API] Fetching messages between ${currentUserId} and ${otherUserId}`);
+    // Check if Authorization header is set
+    const authHeader = axios.defaults.headers.common['Authorization'];
+    console.log('[API getMessages] Axios Authorization Header:', authHeader ? `${authHeader.substring(0, 15)}...` : 'NOT SET');
+    
+    // If header is not set, try to set it from localStorage
+    if (!authHeader) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        console.log('[API getMessages] Setting Authorization header from localStorage');
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      } else {
+        console.error('[API getMessages] No token in localStorage');
+      }
+    }
+    
+    console.log(`[API getMessages] Fetching messages between ${currentUserId} and ${otherUserId}`);
     const response = await axios.get(`${API_URL}/messages/conversations/${otherUserId}?currentUserId=${currentUserId}`);
-    console.log(`[API] Received messages:`, response.data);
+    console.log(`[API getMessages] Received ${response.data.length} messages`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching messages from API:', error);
+    console.error('[API getMessages] Error:', error.response?.status, error.response?.data || error.message);
     // Rethrow the error so the component can handle it
     throw error;
   }
@@ -132,10 +231,18 @@ export const deleteMessage = async (messageId, userId) => {
 
 export const markMessageAsRead = async (messageId, userId) => {
   try {
-        if (!userId) {
-      console.error('Error: userId is required for markMessageAsRead');
-      return; // Or throw an error
+    // Add validation to prevent API calls with undefined parameters
+    if (!messageId) {
+      console.error('Error: messageId is required for markMessageAsRead');
+      return Promise.reject(new Error('Missing messageId'));
     }
+    
+    if (!userId) {
+      console.error('Error: userId is required for markMessageAsRead');
+      return Promise.reject(new Error('Missing userId'));
+    }
+    
+    console.log(`Marking message ${messageId} as read for user ${userId}`);
     await axios.post(`${API_URL}/messages/${messageId}/read?userId=${userId}`);
   } catch (error) {
     console.error('Error marking message as read:', error);
@@ -145,6 +252,8 @@ export const markMessageAsRead = async (messageId, userId) => {
         msg.id === messageId ? { ...msg, isRead: true } : msg
       );
     });
+    // Re-throw the error so the component can handle it if needed
+    throw error;
   }
 };
 

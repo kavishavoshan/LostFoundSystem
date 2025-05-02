@@ -12,19 +12,37 @@ export class AnalyticsService {
   ) {}
 
   async generateReport(): Promise<any> {
-    const [lostCount, foundCount, lostByLocation, foundByLocation] = await Promise.all([
+    const [lostCount, foundCount, commonItems, frequentLocs] = await Promise.all([
       this.getLostItemsCount(),
       this.getFoundItemsCount(),
-      this.getLostItemsByLocation(),
-      this.getFoundItemsByLocation(),
+      this.getCommonLostItems(), // Fetch common items
+      this.getFrequentLocationsInternal(), // Fetch frequent locations (internal format)
     ]);
 
-    return {
+    // Calculate return rate - using the formula from getReturnRate for consistency if needed, or keep the current one.
+    // Let's use the one that seems more logical: percentage of total items that were found.
+    const calculatedReturnRate = (lostCount + foundCount) > 0 ? (foundCount / (lostCount + foundCount)) * 100 : 0;
+
+    const totalItems = {
+      total: lostCount + foundCount,
       totalLost: lostCount,
       totalFound: foundCount,
-      lostByLocation,
-      foundByLocation,
-      returnRate: foundCount > 0 ? (foundCount / (lostCount + foundCount)) * 100 : 0,
+    };
+
+    // Map frequent locations from { name, count } to { location, count }
+    const frequentLocationsFormatted = frequentLocs.map(loc => ({
+      location: loc.name, // Rename 'name' to 'location'
+      count: loc.count,
+    }));
+
+    return {
+      totalItems: totalItems, // Nested object as expected by frontend
+      commonItems: commonItems, // Renamed from commonLostItems
+      frequentLocations: frequentLocationsFormatted, // Use formatted locations with 'location' key
+      returnRate: {
+        returnRate: parseFloat(calculatedReturnRate.toFixed(2)), // Nested object as expected by frontend
+      },
+      generatedAt: new Date(), // Add generation timestamp
     };
   }
 
@@ -36,34 +54,52 @@ export class AnalyticsService {
     return lostCount + foundCount;
   }
 
-  async getCommonLostItems(): Promise<any[]> {
+  async getCommonLostItems(): Promise<{ name: string; count: number }[]> {
     return this.lostItemModel.aggregate([
+      // Ensure itemType exists before grouping
+      { $match: { itemType: { $exists: true, $ne: null } } }, // Removed duplicate $ne: '' 
       { $group: { _id: '$itemType', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
-      { $limit: 5 }
+      { $limit: 5 },
+      // Project to match frontend { name, count } structure
+      { $project: { _id: 0, name: '$_id', count: 1 } } 
     ]).exec();
   }
 
-  async getFrequentLocations(): Promise<any[]> {
+  async getFrequentLocationsInternal(): Promise<{ name: string; count: number }[]> {
     const [lostLocations, foundLocations] = await Promise.all([
       this.getLostItemsByLocation(),
       this.getFoundItemsByLocation(),
     ]);
 
-    const locationMap = new Map();
-    
-    lostLocations.forEach(({ _id, count }) => {
-      locationMap.set(_id, (locationMap.get(_id) || 0) + count);
-    });
-    
-    foundLocations.forEach(({ _id, count }) => {
-      locationMap.set(_id, (locationMap.get(_id) || 0) + count);
-    });
+    const locationMap = new Map<string, number>();
+
+    // Helper to add to map, handling null/undefined locations
+    const addToMap = (loc: any) => {
+      if (loc && loc._id) { // Check if _id exists and is not null/undefined
+        const currentCount = locationMap.get(loc._id) || 0;
+        locationMap.set(loc._id, currentCount + loc.count);
+      }
+    };
+
+    lostLocations.forEach(addToMap);
+    foundLocations.forEach(addToMap);
 
     return Array.from(locationMap.entries())
-      .map(([location, count]) => ({ location, count }))
+      // Map to { name, count } structure for internal use
+      .map(([name, count]) => ({ name, count })) 
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
+  }
+
+  // Add the missing public method
+  async getFrequentLocations(): Promise<{ location: string; count: number }[]> {
+    const frequentLocs = await this.getFrequentLocationsInternal();
+    // Map frequent locations from { name, count } to { location, count }
+    return frequentLocs.map(loc => ({
+      location: loc.name, // Rename 'name' to 'location'
+      count: loc.count,
+    }));
   }
 
   async getReturnRate(): Promise<number> {
@@ -82,17 +118,21 @@ export class AnalyticsService {
     return this.foundItemModel.countDocuments().exec();
   }
 
-  async getLostItemsByLocation(): Promise<any[]> {
+  async getLostItemsByLocation(): Promise<{ _id: string; count: number }[]> {
     return this.lostItemModel.aggregate([
+      // Ensure lostLocation exists before grouping
+      { $match: { lostLocation: { $exists: true, $ne: null } } }, // Removed duplicate $ne: '' 
       { $group: { _id: '$lostLocation', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]).exec();
   }
 
-  async getFoundItemsByLocation(): Promise<any[]> {
+  async getFoundItemsByLocation(): Promise<{ _id: string; count: number }[]> {
     return this.foundItemModel.aggregate([
+      // Ensure foundLocation exists before grouping
+      { $match: { foundLocation: { $exists: true, $ne: null } } }, // Removed duplicate $ne: '' 
       { $group: { _id: '$foundLocation', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]).exec();
   }
-} 
+}
