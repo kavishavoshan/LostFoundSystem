@@ -19,6 +19,9 @@ export class LostItemsService {
       ...createLostItemDto,
       image: createLostItemDto.image ? Buffer.from(createLostItemDto.image) : null
     });
+
+    console.log('Created Lost Item:', createdLostItem);
+
     const savedItem = await createdLostItem.save();
     return this.convertToResponse(savedItem);
   }

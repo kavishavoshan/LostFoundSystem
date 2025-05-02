@@ -132,7 +132,7 @@ const ItemForm = ({ type = 'lost', onClose }) => {
         description: data.description.trim(),
         contactNumber: data.contactNumber.trim(),
         category: data.category,
-        image: imageField,
+        image: data.image,
         location: data.location.trim(),
       };
 

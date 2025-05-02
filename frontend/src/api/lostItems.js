@@ -26,6 +26,11 @@ export const createLostItem = async (itemData) => {
       formData.append('image', itemData.image);
       formData.append('imageContentType', itemData.image.type);
 
+      formData.forEach((value, key) => {
+        console.log(key, value);
+      }
+      );
+
       const response = await axios.post(API_BASE_URL, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',

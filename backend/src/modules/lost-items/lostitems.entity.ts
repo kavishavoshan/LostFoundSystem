@@ -9,7 +9,7 @@ export class LostItem {
   itemName: string;
 
   @Prop({ required: true })
-  imageUrl: string;
+  image: string;
 
   @Prop({ required: true })
   lostLocation: string;

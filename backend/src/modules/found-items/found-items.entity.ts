@@ -10,7 +10,7 @@ export class FoundItem {
   itemName: string;
 
   @Prop({ required: true })
-  imageUrl: string;
+  image: string;
 
   @Prop({ required: true })
   foundLocation: string;
