@@ -11,7 +11,8 @@ import { useAuth } from '../../context/AuthContext';
 import { exportToExcel, exportToCSV, exportToPDF } from "../../utils/exportUtils.ts";
 import { deleteLostItem } from '../../api/lostItems';
 import { deleteFoundItem } from '../../api/foundItems';
-
+import { getLostItemById } from '../../api/lostItems';
+import { getFoundItemById } from '../../api/foundItems';
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 
 const Dashboard = () => {
@@ -58,10 +59,14 @@ const Dashboard = () => {
   ];
   
   const handleEdit = async (id) => {
-    const fullItem = await getLostItems(id);
-    setItemToEdit(fullItem);
+    const fullItem =
+      activeTab === 'lost'
+        ? await getLostItemById(id)
+        : await getFoundItemById(id); // ← make sure this exists
+  
+    setItemToEdit({ ...fullItem, id });
     setShowModal(true);
-  };
+  };  
 
   const handleOpenForm = () => setShowModal(true);
   const handleCloseForm = () => setShowModal(false);

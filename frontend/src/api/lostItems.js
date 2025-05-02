@@ -13,6 +13,16 @@ export const getLostItems = async (userId) => {
   }
 };
 
+export const getLostItemById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching lost item:", error);
+    return [];
+  }
+};
+
 // ✅ CREATE new lost item
 export const createLostItem = async (itemData) => {
   try {

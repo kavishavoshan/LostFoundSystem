@@ -14,6 +14,16 @@ export const getFoundItems = async () => {
   }
 };
 
+export const getFoundItemById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching found item:", error);
+    return [];
+  }
+};
+
 // ✅ CREATE new found item
 export const createFoundItem = async (itemData) => {
   console.log("Item data in createFoundItem: ", itemData);
@@ -56,34 +66,29 @@ export const createFoundItem = async (itemData) => {
 };
 
 // ✅ UPDATE existing found item
-export const updateFoundItem = async (id, updatedData) => {
-  try {
-    // Handle image update similar to create
-    if (updatedData.image instanceof File) {
-      const formData = new FormData();
-      Object.keys(updatedData).forEach(key => {
-        if (key === 'image') {
-          formData.append('image', updatedData.image);
-          formData.append('imageContentType', updatedData.image.type);
-        } else {
-          formData.append(key, updatedData[key]);
-        }
-      });
+export const updateFoundItem = async (id, item) => {
+  const formData = new FormData();
 
-      const response = await axios.patch(`${API_BASE_URL}/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data;
-    } else {
-      const response = await axios.patch(`${API_BASE_URL}/${id}`, updatedData);
-      return response.data;
-    }
-  } catch (error) {
-    console.error(`Error updating found item with ID ${id}:`, error);
-    throw error;
+  formData.append('description', item.description);
+  formData.append('location', item.location);
+  formData.append('contactNumber', item.contactNumber);
+  formData.append('category', item.category);
+  formData.append('userId', item.userId);
+  formData.append('status', item.status || 'found');
+
+  if (item.clip_vector) {
+    formData.append('clip_vector', JSON.stringify(item.clip_vector));
   }
+
+  if (item.image && item.image instanceof File) {
+    formData.append('image', item.image);
+  }
+
+  return await axios.patch(`${API_BASE_URL}/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
 
 // ✅ DELETE found item
