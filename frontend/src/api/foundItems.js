@@ -4,9 +4,9 @@ const API_BASE_URL = "http://localhost:3001/found-items";
 const ML_SERVER_URL = "http://localhost:5001/upload-found-item";
 
 // ✅ GET all found items
-export const getFoundItems = async (userId) => {
+export const getFoundItems = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/user/${userId}`);
+    const response = await axios.get(`${API_BASE_URL}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching found items:", error);
