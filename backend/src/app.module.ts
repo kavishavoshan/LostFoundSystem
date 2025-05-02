@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { LostItemsModule } from './modules/lost-items/lostitems.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { FoundItemsModule } from './modules/found-items/found-items.module';
+import { NewsPageModule } from './modules/news/news-page.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { FoundItemsModule } from './modules/found-items/found-items.module';
     LostItemsModule,
     MessagesModule,
     FoundItemsModule,
+    NewsPageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

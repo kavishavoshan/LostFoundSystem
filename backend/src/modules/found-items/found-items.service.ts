@@ -1,66 +1,79 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { FoundItem } from './schemas/found-item.schema';
+import { FoundItem } from './found-item.entity';
 import { CreateFoundItemDto } from './dto/create-found-item.dto';
 import { UpdateFoundItemDto } from './dto/update-found-item.dto';
+import { FoundItemResponse } from './types/found-item.types';
+
+type FoundItemDocument = FoundItem & Document & { toObject(): any };
 
 @Injectable()
 export class FoundItemsService {
   constructor(
-    @InjectModel(FoundItem.name) private foundItemModel: Model<FoundItem>,
+    @InjectModel(FoundItem.name) private foundItemModel: Model<FoundItemDocument>,
   ) {}
 
-  async create(createFoundItemDto: CreateFoundItemDto): Promise<FoundItem> {
-    const createdFoundItem = new this.foundItemModel(createFoundItemDto);
-    return createdFoundItem.save();
+  async create(createFoundItemDto: CreateFoundItemDto): Promise<FoundItemResponse> {
+    const createdFoundItem = new this.foundItemModel({
+      ...createFoundItemDto,
+      image: createFoundItemDto.image ? Buffer.from(createFoundItemDto.image) : null
+    });
+
+    console.log('Created Found Item:', createdFoundItem);
+    console.log('Image Buffer:', createdFoundItem.image);
+
+    const savedItem = await createdFoundItem.save();
+    return this.convertToResponse(savedItem);
   }
 
-  async findAll(): Promise<FoundItem[]> {
-    return this.foundItemModel.find().exec();
+  async findAll(): Promise<FoundItemResponse[]> {
+    const items = await this.foundItemModel.find().exec();
+    return items.map(item => this.convertToResponse(item));
   }
 
-  async findOne(id: string): Promise<FoundItem> {
+  async findOne(id: string): Promise<FoundItemResponse> {
     const foundItem = await this.foundItemModel.findById(id).exec();
     if (!foundItem) {
       throw new NotFoundException(`Found item with ID ${id} not found`);
     }
-    return foundItem;
+    return this.convertToResponse(foundItem);
   }
 
-  async findByUser(userId: string): Promise<FoundItem[]> {
-    return this.foundItemModel.find({ userId }).exec();
+  async findByUser(userId: string): Promise<FoundItemResponse[]> {
+    const items = await this.foundItemModel.find({ userId }).exec();
+    return items.map(item => this.convertToResponse(item));
   }
 
-  async update(id: string, updateFoundItemDto: UpdateFoundItemDto): Promise<FoundItem> {
+  async update(id: string, updateFoundItemDto: UpdateFoundItemDto): Promise<FoundItemResponse> {
     const updatedFoundItem = await this.foundItemModel
-      .findByIdAndUpdate(id, updateFoundItemDto, { new: true })
+      .findByIdAndUpdate(id, {
+        ...updateFoundItemDto,
+        image: updateFoundItemDto.image ? Buffer.from(updateFoundItemDto.image) : undefined
+      }, { new: true })
       .exec();
     if (!updatedFoundItem) {
       throw new NotFoundException(`Found item with ID ${id} not found`);
     }
-    return updatedFoundItem;
+    return this.convertToResponse(updatedFoundItem);
   }
 
-  async remove(id: string): Promise<FoundItem> {
+  async remove(id: string): Promise<FoundItemResponse> {
     const deletedFoundItem = await this.foundItemModel.findByIdAndDelete(id).exec();
     if (!deletedFoundItem) {
       throw new NotFoundException(`Found item with ID ${id} not found`);
     }
-    return deletedFoundItem;
+    return this.convertToResponse(deletedFoundItem);
   }
 
-    // async update(id: number, updateFoundItemDto: UpdateFoundItemDto): Promise<FoundItem> {
-    //   const item = await this.foundItemRepository.findOneBy({ id });
-    //   if (!item) throw new Error(`Found item with id ${id} not found`);
-    
-    //   const updated = Object.assign(item, updateFoundItemDto);
-    //   return this.foundItemRepository.save(updated);
-    // }
-    
-    // async remove(id: number): Promise<{ message: string }> {
-    //   const result = await this.foundItemRepository.delete(id);
-    //   if (result.affected === 0) throw new Error(`Found item with id ${id} not found`);
-    //   return { message: `Found item with id ${id} deleted successfully` };
-    // }
+  private convertToResponse(item: FoundItemDocument): FoundItemResponse {
+    const doc = item.toObject();
+    return {
+      ...doc,
+      _id: doc._id.toString(),
+      image: doc.image ? `data:${doc.imageContentType};base64,${doc.image.toString('base64')}` : null,
+      createdAt: doc.createdAt || new Date(),
+      imageContentType: doc.imageContentType || 'image/jpeg'
+    };
+  }
 }

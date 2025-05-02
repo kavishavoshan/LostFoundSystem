@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { getLostItems, createLostItem } from "../../api/lostItems";
-import { Input } from "../UI/input";
-import { Button } from "../UI/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../UI/card";
+import { getLostItems } from "../../api/lostItems";
+import { useAuth } from '../../context/AuthContext';
+import ItemForm from './ItemForm';
 import "../../styles/itemManagementCSS.css";
 
 const LostItems = () => {
   const [items, setItems] = useState([]);
+  const { user } = useAuth();
+  const [showForm, setShowForm] = useState(false);
   const [newItem, setNewItem] = useState({
     itemName: "",
-    imageUrl: "",
+    image: null,
     lostLocation: "",
-    contactNumber: "",
-    description: ""
+    contactNumber: user?.phoneNumber || "",
+    description: "",
+    category: "Unknown",
+    userId: user?._id || ""
   });
 
   useEffect(() => {
@@ -20,171 +23,73 @@ const LostItems = () => {
   }, []);
 
   const fetchItems = async () => {
-    const data = await getLostItems();
-    setItems(data);
-  };
-
-  const handleChange = (e) => {
-    setNewItem({ ...newItem, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
     try {
-      await createLostItem(newItem);
-      fetchItems();
-      setNewItem({ itemName: "", imageUrl: "", lostLocation: "", contactNumber: "", description: "" });
+      const data = await getLostItems();
+      setItems(data);
     } catch (error) {
-      console.error("Failed to add item");
+      console.error("Error fetching lost items:", error);
     }
+  };
+
+  const handleFormClose = () => {
+    if (!user?._id) {
+      alert('Please log in to report a lost item');
+      return;
+    }
+    setShowForm(false);
+    fetchItems();
   };
 
   return (
     <div className="h-screen overflow-y-auto bg-gray-50 px-4 py-35">
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-12">
-          <div className="border-b border-gray-900/10 pb-12">
-            <h2 className="text-base font-semibold leading-7 text-gray-900">Report Lost Item</h2>
-            <p className="mt-1 text-sm leading-6 text-gray-600">Please provide accurate information about the lost item.</p>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-gray-900">Lost Items</h2>
+        <button
+          onClick={() => setShowForm(true)}
+          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md"
+        >
+          Report Lost Item
+        </button>
+      </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-              <div className="sm:col-span-3">
-                <label htmlFor="itemName" className="block text-sm font-medium leading-6 text-gray-900">
-                  Item Name
-                </label>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    name="itemName"
-                    id="itemName"
-                    value={newItem.itemName}
-                    onChange={handleChange}
-                    placeholder="E.g. Black wallet"
-                    required
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-3">
-                <label htmlFor="lostLocation" className="block text-sm font-medium leading-6 text-gray-900">
-                  Lost Location
-                </label>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    name="lostLocation"
-                    id="lostLocation"
-                    value={newItem.lostLocation}
-                    onChange={handleChange}
-                    placeholder="E.g. SLIIT UNI, Malabe"
-                    required
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-3">
-                <label htmlFor="contactNumber" className="block text-sm font-medium leading-6 text-gray-900">
-                  Contact Number
-                </label>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    name="contactNumber"
-                    id="contactNumber"
-                    value={newItem.contactNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      if (value.length <= 10) {
-                        handleChange({
-                          target: {
-                            name: 'contactNumber',
-                            value,
-                          },
-                        });
-                      }
-                    }}
-                    placeholder="E.g. 0777788899"
-                    required
-                    maxLength={10}
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-6">
-                <label htmlFor="image" className="block text-sm font-medium leading-6 text-gray-900">
-                  Item Photo
-                </label>
-                <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
-                  <div className="text-center">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-300"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                      <label
-                        htmlFor="imageUrl"
-                        className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none hover:text-indigo-500"
-                      >
-                        <span>Upload an image</span>
-                        <input
-                          id="imageUrl"
-                          name="imageUrl"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleChange}
-                          className="sr-only"
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
-                  </div>
-                </div>
-              </div>
-              <div className="sm:col-span-6">
-                <label htmlFor="description" className="block text-sm font-medium leading-6 text-gray-900">
-                  Description
-                </label>
-                <div className="mt-2">
-                  <textarea
-                    name="description"
-                    id="description"
-                    value={newItem.description}
-                    onChange={handleChange}
-                    rows={4}
-                    required
-                    placeholder="E.g. Black wallet with three cards inside"
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-                  />
-                </div>
-              </div>
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Report Lost Item</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700">
+                ✕
+              </button>
             </div>
-          </div>
-
-          <div className="mt-6 flex items-center justify-end gap-x-6">
-            <button type="button" className="text-sm font-semibold text-gray-900">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Add Item
-            </button>
+            <ItemForm type="lost" onClose={handleFormClose} />
           </div>
         </div>
-      </form>
+      )}
+
+      {/* Display lost items */}
+      <div className="mt-8 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => (
+          <div key={item._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            {item.image && (
+              <img
+                src={item.image}
+                alt={item.itemName || 'Lost item'}
+                className="w-full h-48 object-cover"
+              />
+            )}
+            <div className="p-4">
+              <h3 className="text-lg font-semibold">{item.itemName}</h3>
+              <p className="text-gray-600 mt-1">{item.description}</p>
+              <p className="text-sm text-gray-500 mt-2">Location: {item.lostLocation}</p>
+              <p className="text-sm text-gray-500">Contact: {item.contactNumber}</p>
+              <p className="text-sm text-gray-500">Category: {item.category}</p>
+              <p className="text-sm text-gray-500">
+                Posted: {new Date(item.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
