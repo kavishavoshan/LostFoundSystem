@@ -4,8 +4,8 @@ import logo from '../../images/image.jpg';
 
 const Footer = () => {
   return (
-    <footer className="bg-[#0B1829] text-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <footer className="bg-[#0B1829] text-white py-6 mt-auto">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           {/* Logo and Description */}
           <div className="md:col-span-6 space-y-4">
