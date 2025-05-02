@@ -5,14 +5,18 @@ import {
   PencilIcon,
   EnvelopeIcon,
   PrinterIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 import { TrashIcon } from "@heroicons/react/24/solid";
 import Swal from "sweetalert2";
 import axios from "axios";
 import emailjs from "@emailjs/browser";
 import { jsPDF } from "jspdf";
+import { Dialog } from "@headlessui/react";
+import ItemForm from "../../components/itemManagement/ItemForm";
 
 const API_BASE_URL = "http://localhost:3001";
+const DEFAULT_USER_ID = "6813ce3d762a5cfabcedcdd7"; // Hardcoded user ID
 
 const TABS = [
   { label: "All", value: "all" },
@@ -59,6 +63,32 @@ const updateFoundItem = async (id, updatedData) => {
   }
 };
 
+const createLostItem = async (itemData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/lost-items`, {
+      ...itemData,
+      userId: DEFAULT_USER_ID // Always use the hardcoded user ID
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error adding lost item:", error);
+    throw error;
+  }
+};
+
+const createFoundItem = async (itemData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/found-items`, {
+      ...itemData,
+      userId: DEFAULT_USER_ID // Always use the hardcoded user ID
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error adding found item:", error);
+    throw error;
+  }
+};
+
 function UserTable() {
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,6 +103,8 @@ function UserTable() {
     category: "",
     contactNumber: "",
   });
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [showFoundModal, setShowFoundModal] = useState(false);
 
   useEffect(() => {
     emailjs.init("lIwc1XWfTvsLQs0zu");
@@ -123,6 +155,11 @@ function UserTable() {
 
     fetchData();
   }, []);
+
+  const handleOpenLostForm = () => setShowLostModal(true);
+  const handleCloseLostForm = () => setShowLostModal(false);
+  const handleOpenFoundForm = () => setShowFoundModal(true);
+  const handleCloseFoundForm = () => setShowFoundModal(false);
 
   const getUserInfo = (userId) => {
     const user = users[userId] || {};
@@ -231,6 +268,69 @@ function UserTable() {
     }
   };
 
+  const handleAddItem = async (type, formData) => {
+    try {
+      Swal.fire({
+        title: "Adding item...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      let response;
+      if (type === "lost") {
+        response = await createLostItem(formData);
+      } else {
+        response = await createFoundItem(formData);
+      }
+
+      // Refresh the items list
+      const fetchData = async () => {
+        const [lostItemsRes, foundItemsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/lost-items`),
+          axios.get(`${API_BASE_URL}/found-items`),
+        ]);
+
+        const combinedItems = [
+          ...lostItemsRes.data.map((item) => ({
+            ...item,
+            status: "lost",
+            type: "lost",
+          })),
+          ...foundItemsRes.data.map((item) => ({
+            ...item,
+            status: "found",
+            type: "found",
+          })),
+        ];
+
+        setItems(combinedItems);
+      };
+
+      await fetchData();
+
+      Swal.fire(
+        "Added!",
+        `The ${type} item has been added successfully.`,
+        "success"
+      );
+
+      // Close the appropriate modal
+      if (type === "lost") {
+        handleCloseLostForm();
+      } else {
+        handleCloseFoundForm();
+      }
+    } catch (error) {
+      console.error(`Error adding ${type} item:`, error);
+      Swal.fire({
+        icon: "error",
+        title: "Add Failed",
+        text: error.message || `Failed to add ${type} item. Please try again.`,
+      });
+    }
+  };
   const generateReport = async (item) => {
   try {
     Swal.fire({
@@ -655,14 +755,33 @@ function UserTable() {
     <div className="h-full w-full bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
       {/* Card Header */}
       <div className="px-6 py-4">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Lost & Found Items
-          </h2>
-          <p className="mt-2 text-base text-gray-600">
-            Track lost and found items in your community
-          </p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Lost & Found Items
+            </h2>
+            <p className="mt-2 text-base text-gray-600">
+              Track lost and found items in your community
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleOpenLostForm}
+              className="bg-[#FF6B00] hover:bg-[#E65A00] text-white font-medium px-4 py-2 rounded-md transition-colors flex items-center gap-2"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Add Lost Item
+            </button>
+            <button
+              onClick={handleOpenFoundForm}
+              className="bg-[#1E3E62] hover:bg-[#0B1829] text-white font-medium px-4 py-2 rounded-md transition-colors flex items-center gap-2"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Add Found Item
+            </button>
+          </div>
         </div>
+
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <div className="w-full md:w-max">
             <div className="flex border border-gray-200 rounded-lg">
@@ -896,6 +1015,40 @@ function UserTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Lost Item Form Dialog */}
+      <Dialog open={showLostModal} onClose={handleCloseLostForm} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <Dialog.Title className="text-xl font-bold text-[#0B1829] mb-4 text-center border-b pb-2">
+              Add Lost Item
+            </Dialog.Title>
+            <ItemForm
+              type="lost"
+              onClose={handleCloseLostForm}
+              onSubmit={(formData) => handleAddItem("lost", formData)}
+            />
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
+      {/* Found Item Form Dialog */}
+      <Dialog open={showFoundModal} onClose={handleCloseFoundForm} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <Dialog.Title className="text-xl font-bold text-[#0B1829] mb-4 text-center border-b pb-2">
+              Add Found Item
+            </Dialog.Title>
+            <ItemForm
+              type="found"
+              onClose={handleCloseFoundForm}
+              onSubmit={(formData) => handleAddItem("found", formData)}
+            />
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   );
 }
