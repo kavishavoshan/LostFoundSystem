@@ -2,7 +2,7 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 
 const API_URL = 'http://localhost:3001';
-const TEST_USER_ID = 1; // Using the first test user's ID
+// const TEST_USER_ID = 1; // Removed hardcoded user ID
 
 // Test messages for development
 const TEST_MESSAGES = {
@@ -51,9 +51,13 @@ export const initializeSocket = (token) => {
   return socket;
 };
 
-export const getConversations = async () => {
+export const getConversations = async (userId) => {
   try {
-    const response = await axios.get(`${API_URL}/messages/conversations?userId=${TEST_USER_ID}`);
+        if (!userId) {
+      console.error('Error: userId is required for getConversations');
+      return []; // Or throw an error
+    }
+    const response = await axios.get(`${API_URL}/messages/conversations?userId=${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching conversations:', error);
@@ -61,21 +65,28 @@ export const getConversations = async () => {
   }
 };
 
-export const getMessages = async (userId) => {
+export const getMessages = async (otherUserId, currentUserId) => {
+  if (!currentUserId || !otherUserId) {
+    const errorMsg = 'Error: currentUserId and otherUserId are required for getMessages';
+    console.error(errorMsg, { currentUserId, otherUserId });
+    throw new Error(errorMsg); // Throw error if IDs are missing
+  }
   try {
-    const response = await axios.get(`${API_URL}/messages/conversations/${userId}?currentUserId=${TEST_USER_ID}`);
+    console.log(`[API] Fetching messages between ${currentUserId} and ${otherUserId}`);
+    const response = await axios.get(`${API_URL}/messages/conversations/${otherUserId}?currentUserId=${currentUserId}`);
+    console.log(`[API] Received messages:`, response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching messages:', error);
-    // Return test messages if API call fails
-    return TEST_MESSAGES[userId] || [];
+    console.error('Error fetching messages from API:', error);
+    // Rethrow the error so the component can handle it
+    throw error;
   }
 };
 
 export const sendMessage = async (receiverId, content, attachmentUrl = null) => {
   try {
     const response = await axios.post(`${API_URL}/messages`, {
-      senderId: TEST_USER_ID,
+      // receiverId is required, senderId will be extracted from JWT token on the server
       receiverId,
       content,
       attachmentUrl,
@@ -87,7 +98,8 @@ export const sendMessage = async (receiverId, content, attachmentUrl = null) => 
     const newMessage = {
       id: Date.now(),
       content,
-      senderId: TEST_USER_ID,
+      // Get current user ID from localStorage for fallback
+      senderId: JSON.parse(localStorage.getItem('user'))?._id || JSON.parse(localStorage.getItem('user'))?.id, 
       receiverId,
       createdAt: new Date().toISOString(),
       isRead: false,
@@ -102,9 +114,13 @@ export const sendMessage = async (receiverId, content, attachmentUrl = null) => 
   }
 };
 
-export const deleteMessage = async (messageId) => {
+export const deleteMessage = async (messageId, userId) => {
   try {
-    await axios.delete(`${API_URL}/messages/${messageId}?userId=${TEST_USER_ID}`);
+        if (!userId) {
+      console.error('Error: userId is required for deleteMessage');
+      return; // Or throw an error
+    }
+    await axios.delete(`${API_URL}/messages/${messageId}?userId=${userId}`);
   } catch (error) {
     console.error('Error deleting message:', error);
     // Remove from test messages if API call fails
@@ -114,9 +130,13 @@ export const deleteMessage = async (messageId) => {
   }
 };
 
-export const markMessageAsRead = async (messageId) => {
+export const markMessageAsRead = async (messageId, userId) => {
   try {
-    await axios.post(`${API_URL}/messages/${messageId}/read?userId=${TEST_USER_ID}`);
+        if (!userId) {
+      console.error('Error: userId is required for markMessageAsRead');
+      return; // Or throw an error
+    }
+    await axios.post(`${API_URL}/messages/${messageId}/read?userId=${userId}`);
   } catch (error) {
     console.error('Error marking message as read:', error);
     // Mark as read in test messages if API call fails
@@ -128,11 +148,11 @@ export const markMessageAsRead = async (messageId) => {
   }
 };
 
-export const editMessage = async (messageId, content) => {
+export const editMessage = async (messageId, content, userId) => {
   try {
     const response = await axios.put(`${API_URL}/messages/${messageId}`, {
-      content,
-      userId: TEST_USER_ID,
+            content,
+      userId,
     });
     return response.data;
   } catch (error) {
@@ -158,34 +178,41 @@ export const searchUsers = async (query) => {
     return response.data;
   } catch (error) {
     console.error('Error searching users:', error);
-    // Return test users if API call fails
-    const TEST_USERS = [
-      {
-        id: 2,
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane@example.com"
-      },
-      {
-        id: 3,
-        firstName: "John",
-        lastName: "Doe",
-        email: "john@example.com"
-      },
-      {
-        id: 4,
-        firstName: "Alice",
-        lastName: "Johnson",
-        email: "alice@example.com"
-      }
-    ];
-    
-    if (!query.trim()) return [];
-    
-    return TEST_USERS.filter(user => 
-      user.firstName.toLowerCase().includes(query.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(query.toLowerCase()) ||
-      user.email.toLowerCase().includes(query.toLowerCase())
-    );
+    throw error; // Re-throw the error to be handled by the component
   }
-}; 
+};
+
+// Initialize a conversation with a user
+export const initializeConversation = async (currentUserId, otherUserId) => {
+  try {
+    if (!currentUserId || !otherUserId) {
+      console.error('Error: currentUserId and otherUserId are required for initializeConversation');
+      throw new Error('Missing user IDs for conversation initialization');
+    }
+    
+    console.log(`Initializing conversation between ${currentUserId} and ${otherUserId}`);
+    
+    // Send an initial message to create the conversation
+    // This ensures the conversation appears in the list
+    const initialMessage = {
+      // Remove senderId as it will be set by the backend from the JWT token
+      receiverId: otherUserId,
+      content: '👋 Hello!',
+    };
+    
+    const response = await axios.post(`${API_URL}/messages`, initialMessage);
+    console.log('Conversation initialized successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error initializing conversation:', error);
+    // Return a mock message if API call fails
+    return {
+      id: Date.now(),
+      content: '👋 Hello!',
+      senderId: currentUserId,
+      receiverId: otherUserId,
+      createdAt: new Date().toISOString(),
+      isRead: false
+    };
+  }
+};

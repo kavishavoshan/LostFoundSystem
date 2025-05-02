@@ -36,6 +36,20 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      // Try to get user from localStorage first
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (parseError) {
+          console.error('Error parsing stored user data:', parseError);
+          localStorage.removeItem('user');
+        }
+      }
+      
+      // Then verify with server
       const response = await axios.get('http://localhost:3001/auth/me');
       const userData = response.data;
       
@@ -57,24 +71,58 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
+      // Handle both token and accessToken formats from the backend
+      const token = response.data.token || response.data.accessToken;
+      const userData = response.data.user;
       
-      const { accessToken, user } = response.data;
-      
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-      setUser(user);
-      setIsAuthenticated(true);
-      
-      return true;
+      if (token) {
+        localStorage.setItem('token', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setUser(userData);
+        setIsAuthenticated(true);
+        // Also store user in localStorage for persistence
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        return true;
+      } else {
+        throw new Error('No token received from server');
+      }
     } catch (error) {
+      console.error('Login error in AuthContext:', error);
+      throw error;
+    }
+  };
+
+  const register = async (userRegistrationData) => {
+    try {
+      const response = await axios.post('http://localhost:3001/auth/register', userRegistrationData);
+      // Handle both token and accessToken formats from the backend
+      const token = response.data.token || response.data.accessToken;
+      const userData = response.data.user;
+      
+      if (token) {
+        localStorage.setItem('token', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setUser(userData);
+        setIsAuthenticated(true);
+        // Also store user in localStorage for persistence
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        return true;
+      } else {
+        throw new Error('No token received from server');
+      }
+    } catch (error) {
+      console.error('Registration error in AuthContext:', error);
       throw error;
     }
   };
 
   const logout = async () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
@@ -96,7 +144,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ isAuthenticated, user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
