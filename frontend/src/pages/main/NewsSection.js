@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FiX, FiImage } from "react-icons/fi";
+import { FiX, FiImage, FiUpload, FiClock, FiBookmark } from "react-icons/fi";
 import logo from "../../images/image.jpg";
 import { createNewsArticle, getNewsArticles } from "../../api/newsApi"; // Adjust path as needed
 
@@ -120,30 +120,36 @@ const NewspaperSection = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Main Content */}
-      <main className="pt-32 pb-16 px-4">
+      <main className="pt-16 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Newspaper Header */}
-          <header className="border-b-4 border-gray-800 mb-6 pb-4">
-            <h1 className="text-5xl font-bold text-center mb-2 tracking-tight text-gray-900">
-              The Reclaim Found
+          <header className="mb-12 text-center">
+            <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+              The Reclaim Chronicle
             </h1>
-            <div className="flex justify-between text-sm italic text-gray-600">
-              <span>Vol. 1, No. 1</span>
-              <span>{new Date().toLocaleDateString()}</span>
+            <div className="flex justify-center space-x-6 text-sm text-gray-500">
+              <span className="flex items-center">
+                <FiBookmark className="mr-1" /> Vol. 1, No. 1
+              </span>
+              <span className="flex items-center">
+                <FiClock className="mr-1" /> {new Date().toLocaleDateString()}
+              </span>
               <span>Free Edition</span>
             </div>
           </header>
 
           {/* Upload Section */}
-          <div className="bg-gray-100 p-6 mb-8 shadow-lg border border-gray-300 rounded-lg">
-            <h2 className="text-2xl font-bold mb-4 border-b-2 border-gray-800 pb-2 text-gray-900">
-              Submit Your News
+          <div className="bg-white p-8 mb-12 shadow-xl rounded-2xl border border-gray-200">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-3 border-gray-100">
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Submit Your News
+              </span>
             </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-lg mb-2 text-gray-800">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Headline
                 </label>
                 <input
@@ -155,12 +161,13 @@ const NewspaperSection = () => {
                       headline: e.target.value,
                     }))
                   }
-                  className="w-full p-2 border-b-2 border-gray-800 bg-transparent focus:outline-none text-xl text-gray-900"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="Enter headline..."
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-lg mb-2 text-gray-800">
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Story
                 </label>
                 <textarea
@@ -171,20 +178,24 @@ const NewspaperSection = () => {
                       content: e.target.value,
                     }))
                   }
-                  className="w-full p-2 border-b-2 border-gray-800 bg-transparent focus:outline-none text-gray-900"
-                  rows="4"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  rows="5"
                   placeholder="Write your story here..."
                 ></textarea>
               </div>
-              <div className="mb-6">
-                <label className="block text-lg mb-2 text-gray-800">
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Featured Image
                 </label>
                 {!newArticle.imagePreview ? (
-                  <div className="border-2 border-dashed border-gray-400 p-8 text-center rounded-lg">
-                    <label className="cursor-pointer">
-                      <FiImage className="mx-auto text-4xl text-gray-500 mb-2" />
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                    <label className="cursor-pointer flex flex-col items-center justify-center space-y-2">
+                      <div className="p-3 bg-blue-50 rounded-full">
+                        <FiUpload className="text-blue-500 text-2xl" />
+                      </div>
                       <p className="text-gray-500">Click to upload image</p>
+                      <p className="text-xs text-gray-400">JPEG, PNG (Max 5MB)</p>
                       <input
                         type="file"
                         accept="image/*"
@@ -194,25 +205,26 @@ const NewspaperSection = () => {
                     </label>
                   </div>
                 ) : (
-                  <div className="relative">
+                  <div className="relative group">
                     <img
                       src={newArticle.imagePreview}
                       alt="Preview"
-                      className="w-full h-64 object-cover border border-gray-400 rounded-lg"
+                      className="w-full h-64 object-cover rounded-xl border border-gray-200 shadow-sm"
                     />
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="absolute top-2 right-2 bg-white bg-opacity-80 text-gray-800 p-1 rounded-full"
+                      className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
                     >
-                      <FiX className="w-5 h-5" />
+                      <FiX className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
                 )}
               </div>
+              
               <button
                 type="submit"
-                className="bg-gray-800 text-white px-6 py-3 text-lg font-semibold hover:bg-gray-700 transition rounded-lg"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity shadow-md"
               >
                 Publish Article
               </button>
@@ -221,44 +233,52 @@ const NewspaperSection = () => {
 
           {/* Newspaper Articles */}
           <div className="space-y-8">
-            <h2 className="text-3xl font-bold border-b-2 border-gray-800 pb-2 text-gray-900">
-              Latest News
+            <h2 className="text-3xl font-bold text-gray-800 mb-8 pb-3 border-b border-gray-200">
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Latest News
+              </span>
             </h2>
+            
             {loading ? (
-              <div className="text-center py-12 italic text-gray-500">
-                Loading articles...
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div>
             ) : articles.length === 0 ? (
-              <div className="text-center py-12 italic text-gray-500">
-                No articles yet. Be the first to publish!
+              <div className="text-center py-12">
+                <div className="inline-block p-4 bg-gray-100 rounded-full mb-4">
+                  <FiImage className="text-gray-400 text-2xl" />
+                </div>
+                <p className="text-gray-500">No articles yet. Be the first to publish!</p>
               </div>
             ) : (
               articles.map((article) => (
                 <article
                   key={article.id}
-                  className="mb-8 pb-8 border-b border-gray-300 last:border-0"
+                  className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2">
-                      <h3 className="text-3xl font-bold mb-2 leading-tight text-gray-900">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {article.imageUrl && (
+                      <div className="md:w-1/3">
+                        <div className="overflow-hidden rounded-lg aspect-video bg-gray-100">
+                          <img
+                            src={article.imageUrl}
+                            alt="Article visual"
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className={`${article.imageUrl ? 'md:w-2/3' : 'w-full'}`}>
+                      <p className="text-sm text-blue-600 font-medium mb-2">
+                        {article.date}
+                      </p>
+                      <h3 className="text-2xl font-bold mb-3 text-gray-800 hover:text-blue-600 transition-colors">
                         {article.headline}
                       </h3>
-                      <p className="text-sm italic mb-4 text-gray-600">
-                        Published on {article.date}
-                      </p>
-                      <p className="text-lg leading-relaxed text-gray-800">
+                      <p className="text-gray-600 leading-relaxed">
                         {article.content ||
                           "No content provided. An image tells a thousand words!"}
                       </p>
-                    </div>
-                    <div className="md:col-span-1">
-                      {article.imageUrl && (
-                        <img
-                          src={article.imageUrl}
-                          alt="Article visual"
-                          className="w-full h-64 object-cover border border-gray-300 shadow-md rounded-lg"
-                        />
-                      )}
                     </div>
                   </div>
                 </article>
@@ -267,12 +287,11 @@ const NewspaperSection = () => {
           </div>
 
           {/* Newspaper Footer */}
-          <footer className="mt-12 pt-4 border-t-4 border-gray-800 text-center text-sm italic text-gray-600">
+          <footer className="mt-16 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
             <p>
-              © {new Date().getFullYear()} The Reclaim Found - All Rights
-              Reserved
+              © {new Date().getFullYear()} The Reclaim Chronicle - All Rights Reserved
             </p>
-            <p className="mt-1">"Reporting on lost items since 2023"</p>
+            <p className="mt-1">"Bringing lost items back to their owners since 2023"</p>
           </footer>
         </div>
       </main>
