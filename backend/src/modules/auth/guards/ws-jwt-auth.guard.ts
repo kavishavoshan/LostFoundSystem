@@ -10,23 +10,43 @@ export class WsJwtAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     try {
       const client: Socket = context.switchToWs().getClient();
-      const token = this.extractTokenFromHeader(client);
+      console.log('[WsJwtAuthGuard] Client Handshake Auth:', client.handshake.auth); // Log handshake auth
       
+      // Extract token from handshake auth data, not headers
+      const token = client.handshake.auth?.token;
+      
+      // More detailed logging for token extraction
       if (!token) {
-        throw new WsException('Unauthorized');
+        console.error('[WsJwtAuthGuard] No token found in handshake auth data');
+        console.log('[WsJwtAuthGuard] Handshake data:', JSON.stringify(client.handshake));
+        throw new WsException('Unauthorized: Missing token');
       }
       
-      const payload = await this.jwtService.verifyAsync(token);
-      client.data.user = payload;
+      console.log('[WsJwtAuthGuard] Extracted Token:', token.substring(0, 15) + '...');
       
-      return true;
-    } catch {
-      throw new WsException('Unauthorized');
+      try {
+        const payload = await this.jwtService.verifyAsync(token);
+        console.log('[WsJwtAuthGuard] Verified Payload:', payload); // Log verified payload
+        
+        // Ensure the payload has the expected structure
+        if (!payload || !payload.sub) {
+          console.error('[WsJwtAuthGuard] Invalid token payload structure:', payload);
+          throw new WsException('Unauthorized: Invalid token payload');
+        }
+        
+        // Assign the user ID from the token payload (sub field) to client.data
+        client.data = client.data || {}; // Ensure client.data exists
+        client.data.userId = payload.sub;
+        console.log('[WsJwtAuthGuard] Successfully authenticated user:', payload.sub);
+        
+        return true;
+      } catch (jwtError) {
+        console.error('[WsJwtAuthGuard] JWT Verification Error:', jwtError.message);
+        throw new WsException('Unauthorized: Invalid token');
+      }
+    } catch (error) { // Catch specific error
+      console.error('[WsJwtAuthGuard] Authentication Error:', error.message); // Log the error
+      throw new WsException(error.message || 'Unauthorized');
     }
   }
-
-  private extractTokenFromHeader(client: Socket): string | undefined {
-    const [type, token] = client.handshake.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
-  }
-} 
+}

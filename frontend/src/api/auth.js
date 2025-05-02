@@ -21,11 +21,16 @@ export const register = async (userData) => {
 export const login = async (email, password) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/login`, { email, password });
-    if (response.data.accessToken) {
-      localStorage.setItem('token', response.data.accessToken);
+    // Handle both token and accessToken formats from backend
+    const token = response.data.token || response.data.accessToken;
+    if (token) {
+      localStorage.setItem('token', token);
+      console.log('[auth.js] Token stored in localStorage:', token.substring(0, 10) + '...');
       if (response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
+    } else {
+      console.error('[auth.js] No token found in login response:', response.data);
     }
     return response.data;
   } catch (error) {
@@ -52,16 +57,12 @@ export const logout = () => {
   localStorage.removeItem('user');
 };
 
-// Add axios interceptor for authentication
+// Axios request interceptor (Removed Authorization header logic)
+// We now rely on AuthContext setting axios.defaults.headers.common['Authorization']
 axios.interceptors.request.use(
   (config) => {
-    const token = getAuthToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Adding token to request:', config.url);
-    } else {
-      console.log('No token available for request:', config.url);
-    }
+    // You could add other request logic here if needed
+    // console.log('Axios Request Interceptor - Config:', config.url);
     return config;
   },
   (error) => {
