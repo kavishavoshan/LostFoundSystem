@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FiX, FiImage, FiUpload, FiClock, FiBookmark } from "react-icons/fi";
 import logo from "../../images/image.jpg";
 import { createNewsArticle, getNewsArticles } from "../../api/newsApi"; // Adjust path as needed
+import MySwal from "sweetalert2";
 
 const NewspaperSection = () => {
   const [articles, setArticles] = useState([]);
@@ -73,16 +74,37 @@ const NewspaperSection = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (!newArticle.image) {
-      alert("Please upload an image");
+      MySwal.fire({
+        title: "Image Required",
+        text: "Please upload an image for your article",
+        icon: "warning",
+        confirmButtonColor: "#3B82F6"
+      });
       return;
     }
+    
     if (!newArticle.headline || !newArticle.content) {
-      alert("Headline and story are required");
+      MySwal.fire({
+        title: "Missing Information",
+        text: "Both headline and story content are required",
+        icon: "warning",
+        confirmButtonColor: "#3B82F6"
+      });
       return;
     }
+
     try {
-      // Submit to backend
+      // Show loading alert
+      MySwal.fire({
+        title: "Publishing Article...",
+        html: "Please wait while we publish your article",
+        allowOutsideClick: false,
+        didOpen: () => {
+          MySwal.showLoading();
+        }
+      });
       const created = await createNewsArticle({
         headline: newArticle.headline,
         story: newArticle.content,
@@ -114,8 +136,23 @@ const NewspaperSection = () => {
           day: "numeric",
         }),
       });
+      
+      // Show success alert
+      MySwal.fire({
+        title: "Published!",
+        text: "Your article has been published successfully",
+        icon: "success",
+        confirmButtonColor: "#10B981",
+        timer: 2000,
+        timerProgressBar: true
+      });
     } catch (error) {
-      alert("Failed to publish article");
+      MySwal.fire({
+        title: "Error!",
+        text: "Failed to publish article. Please try again.",
+        icon: "error",
+        confirmButtonColor: "#EF4444"
+      });
     }
   };
 
