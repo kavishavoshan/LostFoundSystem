@@ -160,7 +160,9 @@ const NewspaperSection = () => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-lg mb-2 text-gray-800">Story</label>
+                <label className="block text-lg mb-2 text-gray-800">
+                  Story
+                </label>
                 <textarea
                   value={newArticle.content}
                   onChange={(e) =>
