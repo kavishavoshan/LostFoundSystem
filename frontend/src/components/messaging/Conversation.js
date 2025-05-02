@@ -151,13 +151,25 @@ const Conversation = ({ userId, socket }) => {
       if (isRelevant) {
         console.log('[Socket] Received new message:', message);
         
-        // Add message to state if not already present
+        // Add message to state if not already present - using a more robust check
         setMessages((prevMessages) => {
           const messageId = message.id || message._id;
-          if (prevMessages.some(msg => (msg.id === messageId) || (msg._id === messageId))) {
+          // Check if message already exists in the array
+          const messageExists = prevMessages.some(msg => 
+            (msg.id === messageId) || (msg._id === messageId)
+          );
+          
+          if (messageExists) {
+            console.log('[Socket] Message already exists in state, not adding duplicate');
             return prevMessages;
           }
-          return [...prevMessages, message];
+          // Ensure the message has the correct sender/receiver structure
+          const enhancedMessage = {
+            ...message,
+            senderId: message.senderId,
+            receiverId: message.receiverId
+          };
+          return [...prevMessages, enhancedMessage];
         });
         
         // Reset typing indicator when message is received
@@ -190,6 +202,7 @@ const Conversation = ({ userId, socket }) => {
       }
       
       console.log('[Socket] Message deleted:', messageId);
+      // Ensure the message is removed from the UI for both sender and receiver
       setMessages((prevMessages) =>
         prevMessages.filter((msg) => (msg.id !== messageId && msg._id !== messageId))
       );
@@ -297,7 +310,6 @@ const Conversation = ({ userId, socket }) => {
     const content = e.target.value;
     setNewMessage(content);
     
-    // Only emit typing events if we have a socket and the necessary IDs
     if (socket && socket.connected && userId && currentUserId) {
       // Set local typing state
       if (!isTyping && content.length > 0) {
@@ -372,6 +384,7 @@ const Conversation = ({ userId, socket }) => {
           });
 
           attachmentUrl = uploadResponse.data.url;
+          console.log('File uploaded successfully:', attachmentUrl);
         } catch (uploadError) {
           console.error('Error uploading file:', uploadError);
           setError('Failed to upload file. Please try again.');
@@ -405,24 +418,51 @@ const Conversation = ({ userId, socket }) => {
       setUploadProgress(0);
       scrollToBottom();
       
+      let sentMessage;
+      let socketSent = false;
+      
       // First try to send via socket for real-time delivery
       if (socket && socket.connected) {
         console.log('[Socket] Emitting sendMessage event');
-        socket.emit('sendMessage', {
-          receiverId: userId,
-          content: messageContent,
-          attachmentUrl
-        });
+        try {
+          const socketResponse = await new Promise((resolve, reject) => {
+            socket.emit('sendMessage', {
+              receiverId: userId,
+              content: messageContent,
+              attachmentUrl
+            }, (response) => {
+              if (response && response.success) {
+                resolve(response.message);
+              } else {
+                reject(new Error(response?.error || 'Socket send failed'));
+              }
+            });
+            
+            // Add timeout in case socket doesn't respond
+            setTimeout(() => reject(new Error('Socket send timeout')), 5000);
+          });
+          
+          sentMessage = socketResponse;
+          socketSent = true;
+          console.log('Message sent successfully via socket:', sentMessage);
+        } catch (socketError) {
+          console.warn('Socket send failed, falling back to HTTP API:', socketError);
+          socketSent = false;
+        }
       }
       
-      // Also send via HTTP API as a fallback
-      const sentMessage = await sendMessage(userId, messageContent, attachmentUrl);
-      console.log('Message sent successfully:', sentMessage);
+      // If socket send failed or socket not connected, use HTTP API as fallback
+      if (!socketSent) {
+        sentMessage = await sendMessage(userId, messageContent, attachmentUrl);
+        console.log('Message sent successfully via HTTP API:', sentMessage);
+      }
       
       // Replace temporary message with actual message
-      setMessages(prev => prev.map(msg => 
-        msg._id === tempId ? sentMessage : msg
-      ));
+      if (sentMessage) {
+        setMessages(prev => prev.map(msg => 
+          msg._id === tempId ? sentMessage : msg
+        ));
+      }
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to send message. Please try again.');
@@ -452,11 +492,13 @@ const Conversation = ({ userId, socket }) => {
       
       // First try to delete via socket for real-time updates
       if (socket && socket.connected) {
+        console.log('[Socket] Emitting deleteMessage event for messageId:', messageId);
         socket.emit('deleteMessage', { messageId });
       }
       
       // Also delete via HTTP API as a fallback
       await deleteMessage(messageId, currentUserId);
+      console.log('Message deleted successfully via API');
     } catch (err) {
       console.error('Error deleting message:', err);
       setError(err.message || 'Failed to delete message');
@@ -465,6 +507,21 @@ const Conversation = ({ userId, socket }) => {
       const refreshedMessages = await getMessages(userId, currentUserId);
       setMessages(refreshedMessages);
     }
+  };
+
+  // Handle socket message deletion event
+  const handleMessageDeleted = (deletedInfo) => {
+    const messageId = deletedInfo?.messageId;
+    if (!messageId) {
+      console.warn('[Socket] Received messageDeleted event with missing messageId');
+      return;
+    }
+    
+    console.log('[Socket] Message deleted:', messageId);
+    // Ensure the message is removed from the UI for both sender and receiver
+    setMessages((prevMessages) =>
+      prevMessages.filter((msg) => (msg.id !== messageId && msg._id !== messageId))
+    );
   };
 
   const handleEditMessage = async (messageId, content) => {
@@ -608,13 +665,16 @@ const Conversation = ({ userId, socket }) => {
           </div>
         ) : (
           messages.map((message) => {
-            const isSender = message.senderId === currentUserId;
+            // Determine if the current user is the sender of this message
+            // Handle both object and string IDs for proper comparison
+            const messageSenderId = typeof message.senderId === 'object' ? message.senderId._id || message.senderId.id : message.senderId;
+            const isSender = messageSenderId === currentUserId;
             const messageId = message.id || message._id;
             const showEditDelete = isSender && canEditMessage(message);
             const isSending = message.sending === true;
 
             return (
-              <div key={messageId} className={`flex group ${isSender ? 'justify-end' : 'justify-start'}`}>
+              <div key={messageId} className={`flex ${isSender ? 'justify-end' : 'justify-start'} mb-2 group`}>
                 <div 
                   className={`relative max-w-xs lg:max-w-md px-3 py-2 rounded-xl shadow-md 
                     ${isSender 
@@ -649,6 +709,11 @@ const Conversation = ({ userId, socket }) => {
                                alt="Attachment" 
                                className="max-w-full h-auto rounded-lg cursor-pointer" 
                                onClick={() => window.open(message.attachmentUrl, '_blank')} 
+                               onError={(e) => {
+                                 console.error('Image failed to load:', message.attachmentUrl);
+                                 e.target.onerror = null;
+                                 e.target.src = 'https://via.placeholder.com/200x150?text=Image+Not+Available';
+                               }}
                              />
                           ) : (
                             <a 
@@ -682,9 +747,9 @@ const Conversation = ({ userId, socket }) => {
                           )
                         )}
                       </div>
-                      {/* Edit/Delete buttons shown on hover for sender */}
+                      {/* Edit/Delete buttons for sender's messages */}
                       {showEditDelete && !isSending && (
-                        <div className={`absolute -top-2 ${isSender ? '-left-8' : '-right-8'} flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                        <div className={`absolute ${isSender ? '-left-16' : '-right-16'} top-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
                           <button
                             onClick={() => {
                               setEditingMessageId(messageId);

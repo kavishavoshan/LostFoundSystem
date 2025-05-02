@@ -152,12 +152,17 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         userId
       );
       
-      // Broadcast the edited message (ensure it includes all necessary fields, including attachmentUrl if applicable)
-      // The service method should return the full updated document
-      this.server.to(editedMessage.receiverId.toString()).emit('messageEdited', editedMessage);
-      this.server.to(userId).emit('messageEdited', editedMessage);
+      // Get the fully populated message to broadcast
+      const populatedMessage = await editedMessage.populate([
+        { path: 'senderId', select: 'firstName lastName email name _id' },
+        { path: 'receiverId', select: 'firstName lastName email name _id' }
+      ]);
       
-      return { success: true, message: editedMessage };
+      // Broadcast the edited message to both sender and receiver
+      this.server.to(editedMessage.receiverId.toString()).emit('messageEdited', populatedMessage);
+      this.server.to(userId).emit('messageEdited', populatedMessage);
+      
+      return { success: true, message: populatedMessage };
     } catch (error) {
       this.logger.error(`Error editing message: ${error.message}`);
       return { error: error.message };
@@ -177,12 +182,12 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       
       // Get the message to find the recipient before deleting
       const message = await this.messagesService.findOne(data.messageId);
-      const recipientId = message.receiverId;
+      const recipientId = message.receiverId.toString();
       
       // Delete the message from the database
       await this.messagesService.delete(data.messageId, userId);
       
-      // Broadcast the deletion to all relevant clients
+      // Broadcast the deletion to both sender and recipient
       this.server.to(recipientId).emit('messageDeleted', { messageId: data.messageId });
       this.server.to(userId).emit('messageDeleted', { messageId: data.messageId });
       

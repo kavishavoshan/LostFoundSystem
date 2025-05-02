@@ -252,8 +252,21 @@ export const deleteMessage = async (messageId, userId) => {
       throw new Error('Missing messageId for delete operation');
     }
     
-    await axios.delete(`${API_URL}/messages/${messageId}?userId=${userId}`);
-    return true;
+    // Ensure Authorization header is set
+    const authHeader = axios.defaults.headers.common['Authorization'];
+    if (!authHeader) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      } else {
+        throw new Error('No authentication token available');
+      }
+    }
+    
+    console.log(`[API deleteMessage] Deleting message ${messageId} for user ${userId}`);
+    const response = await axios.delete(`${API_URL}/messages/${messageId}?userId=${userId}`);
+    console.log('[API deleteMessage] Message deleted successfully');
+    return response.data;
   } catch (error) {
     console.error('Error deleting message:', error);
     throw error; // Rethrow to let the component handle it
@@ -288,11 +301,24 @@ export const editMessage = async (messageId, content, userId) => {
       console.error('Error: messageId, content, and userId are required for editMessage');
       throw new Error('Missing required parameters for edit operation');
     }
+    
+    // Ensure Authorization header is set
+    const authHeader = axios.defaults.headers.common['Authorization'];
+    if (!authHeader) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      } else {
+        throw new Error('No authentication token available');
+      }
+    }
 
+    console.log(`[API editMessage] Editing message ${messageId} for user ${userId}`);
     const response = await axios.put(`${API_URL}/messages/${messageId}`, {
       content,
       userId,
     });
+    console.log('[API editMessage] Message edited successfully');
     return response.data;
   } catch (error) {
     console.error('Error editing message:', error);
