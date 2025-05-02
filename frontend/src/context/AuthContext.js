@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initializeAuth();
-  }, []);
+  }, [checkAuth]);
 
   const checkAuth = async () => {
     try {
@@ -103,6 +103,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     checkAuth,
+    register,
+    token: localStorage.getItem('token')
   };
 
   if (loading) {
@@ -112,7 +114,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, register, logout, token }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
