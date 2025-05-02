@@ -6,7 +6,7 @@ import SimpleDataGrid from "../../components/itemManagement/SimpleDataGrid";
 import { getLostItems } from '../../api/lostItems';
 import { getFoundItems } from '../../api/foundItems';
 import ItemForm from "../../components/itemManagement/ItemForm";
-
+import { useAuth } from '../../context/AuthContext';
 
 import { exportToExcel, exportToCSV, exportToPDF } from "../../utils/exportUtils.ts";
 import { deleteLostItem } from '../../api/lostItems';
@@ -22,7 +22,7 @@ const Dashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToEdit, setItemToEdit] = useState(null);
-
+  const { user } = useAuth();
   const columns = [
     { field: "id", headerName: "ID", width: 70 },
     { field: "itemName", headerName: "Item Description", flex: 1 },
@@ -63,9 +63,11 @@ const Dashboard = () => {
   const handleCloseForm = () => setShowModal(false);
 
   const fetchItems = async () => {
-    const lostItems = await getLostItems();
-    const foundItems = await getFoundItems();
-
+    if (!user) return;
+  
+    const lostItems = await getLostItems(user._id);
+    const foundItems = await getFoundItems(); // adjust if this also becomes user-specific
+  
     setLostItemRows(lostItems.map((item) => ({
       id: item._id,
       itemName: item.description,
@@ -74,7 +76,7 @@ const Dashboard = () => {
       category: item.category || 'Unknown',
       actions: "edit"
     })));
-
+  
     setFoundItemRows(foundItems.map((item) => ({
       id: item._id,
       itemName: item.description,
@@ -83,11 +85,11 @@ const Dashboard = () => {
       category: item.category || 'Unknown',
       actions: "edit"
     })));
-  };
+  };  
 
   useEffect(() => {
-    fetchItems();
-  }, []);
+    if (user) fetchItems();
+  }, [user]);  
 
   const lostCount = lostItemRows.length;
   const foundCount = foundItemRows.length;
