@@ -29,7 +29,7 @@ import { AuthProvider } from './context/AuthContext';
 
 function App() {
   const location = useLocation();
-  const isMainPage = location.pathname === "/";
+  
   const isAuthPage = ["/login", "/register", "/adminlogin"].includes(location.pathname);
 
   return (
@@ -49,7 +49,7 @@ function App() {
             <Route path="/news" element={<NewsSection />} />
             <Route path="/browseitems" element={<BrowseItems />} />
             <Route path="/itemDashboard" element={<ItemDashboard />} />
-            <Route path="/user" element={<UserTable />} />
+            <Route path="/usertable" element={<UserTable />} />
             <Route path="/adminlogin" element={<AdminLogin />} />
             <Route path="/userprofile" element={<UserProfile />} />
           </Routes>
