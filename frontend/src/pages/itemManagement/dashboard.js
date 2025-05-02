@@ -7,11 +7,12 @@ import { getLostItems } from '../../api/lostItems';
 import { getFoundItems } from '../../api/foundItems';
 import ItemForm from "../../components/itemManagement/ItemForm";
 import { useAuth } from '../../context/AuthContext';
-
+// import { getLostItemById } from '../../api/lostItems';
 import { exportToExcel, exportToCSV, exportToPDF } from "../../utils/exportUtils.ts";
 import { deleteLostItem } from '../../api/lostItems';
 import { deleteFoundItem } from '../../api/foundItems';
-
+import { getLostItemById } from '../../api/lostItems';
+import { getFoundItemById } from '../../api/foundItems';
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 
 const Dashboard = () => {
@@ -38,10 +39,8 @@ const Dashboard = () => {
         <div className="flex gap-4">
           <button
             className="text-blue-600 hover:text-blue-800"
-            onClick={() => {
-              setItemToEdit(params.row); // You can define and use this if editing is needed
-              setShowModal(true);
-            }}
+            onClick={() => handleEdit(params.row.id)}
+
           >
             <FiEdit2 size={18} />
           </button>
@@ -59,6 +58,16 @@ const Dashboard = () => {
     }
   ];
   
+  const handleEdit = async (id) => {
+    const fullItem =
+      activeTab === 'lost'
+        ? await getLostItemById(id)
+        : await getFoundItemById(id); // ← make sure this exists
+  
+    setItemToEdit({ ...fullItem, id });
+    setShowModal(true);
+  };  
+
   const handleOpenForm = () => setShowModal(true);
   const handleCloseForm = () => setShowModal(false);
 
