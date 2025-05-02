@@ -8,8 +8,12 @@ import {
   Tooltip,
   Legend,
   ArcElement,
+  PointElement,
+  LineElement,
+  RadialLinearScale,
+  Filler,
 } from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
+import { Bar, Pie, Doughnut, Line, PolarArea, Radar } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -18,7 +22,11 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  ArcElement
+  ArcElement,
+  PointElement,
+  LineElement,
+  RadialLinearScale,
+  Filler
 );
 
 const Chart = ({ type, data, options }) => {
@@ -28,6 +36,14 @@ const Chart = ({ type, data, options }) => {
         return <Bar data={data} options={options} />;
       case 'pie':
         return <Pie data={data} options={options} />;
+      case 'doughnut':
+        return <Doughnut data={data} options={options} />;
+      case 'line':
+        return <Line data={data} options={options} />;
+      case 'polarArea':
+        return <PolarArea data={data} options={options} />;
+      case 'radar':
+        return <Radar data={data} options={options} />;
       default:
         return null;
     }
@@ -40,4 +56,4 @@ const Chart = ({ type, data, options }) => {
   );
 };
 
-export default Chart; 
+export default Chart;
