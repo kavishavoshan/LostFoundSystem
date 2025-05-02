@@ -1,5 +1,4 @@
 import { useState, useContext } from "react";
-import { login } from "../../api/auth";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/UI/Footer";
@@ -10,7 +9,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const { setUser } = useContext(AuthContext);
+  const { login: authLogin } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -58,41 +57,23 @@ const Login = () => {
     setIsSubmitting(true);
     
     try {
-      const data = await login(formData.email, formData.password);
-      // setUser({ token: data.accessToken });
+      await authLogin(formData.email, formData.password);
       
       await Swal.fire({
         title: "Success!",
         text: "You have successfully logged in.",
         icon: "success",
-        confirmButtonText: "Continue",
-        timer: 2000,
-        timerProgressBar: true,
+        timer: 1500,
+        showConfirmButton: false
       });
       
-      navigate("/home");
-    } catch (err) {
-      console.error("Login error:", err);
-      
-      let errorMessage = "Login failed. Please try again.";
-      if (err.response) {
-        if (err.response.status === 401) {
-          errorMessage = "Invalid email or password";
-        } else if (err.response.status === 500) {
-          errorMessage = "Server error. Please try again later.";
-        }
-      }
-      
-      await Swal.fire({
-        title: "Error!",
-        text: errorMessage,
+      navigate("/");
+    } catch (error) {
+      console.error("Login failed:", error);
+      Swal.fire({
         icon: "error",
-        confirmButtonText: "Try Again",
-      });
-      
-      setErrors({
-        ...errors,
-        password: errorMessage,
+        title: "Login Failed",
+        text: error.response?.data?.message || "Invalid email or password"
       });
     } finally {
       setIsSubmitting(false);

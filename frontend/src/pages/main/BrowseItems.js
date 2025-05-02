@@ -1,61 +1,53 @@
-import { useState, useRef } from 'react';
-import { CameraIcon, MagnifyingGlassIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import React, { useState, useRef } from 'react';
+import { CameraIcon, XMarkIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
 
-const Feature = () => {
+const BrowseItems = () => {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [showCamera, setShowCamera] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  const [activeTab, setActiveTab] = useState('lost'); // 'lost' or 'found'
-  const fileInputRef = useRef(null);
   const videoRef = useRef(null);
-  const [stream, setStream] = useState(null);
-  const [showCamera, setShowCamera] = useState(false);
+  const streamRef = useRef(null);
 
-  // Start camera
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = mediaStream;
-      setStream(mediaStream);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      videoRef.current.srcObject = stream;
+      streamRef.current = stream;
       setShowCamera(true);
     } catch (err) {
+      console.error("Error accessing camera:", err);
       Swal.fire({
         title: 'Camera Error',
-        text: 'Could not access camera. Please check permissions.',
+        text: 'Could not access your camera. Please check permissions.',
         icon: 'error',
         confirmButtonText: 'OK'
       });
     }
   };
 
-  // Stop camera
   const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
     setShowCamera(false);
   };
 
-  // Capture photo from camera
   const capturePhoto = () => {
-    if (!videoRef.current) return;
-    
+    const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, 0, 0);
     
-    const imageUrl = canvas.toDataURL('image/jpeg');
-    setPreview(imageUrl);
-    
-    // Convert to file object
-    canvas.toBlob(blob => {
-      const file = new File([blob], 'captured-photo.jpg', { type: 'image/jpeg' });
+    canvas.toBlob((blob) => {
+      const file = new File([blob], "captured-photo.jpg", { type: "image/jpeg" });
       setImage(file);
+      setPreview(URL.createObjectURL(blob));
     }, 'image/jpeg');
     
     stopCamera();
@@ -64,9 +56,9 @@ const Feature = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImage(file);
         setPreview(reader.result);
       };
       reader.readAsDataURL(file);
@@ -87,14 +79,17 @@ const Feature = () => {
     setIsSearching(true);
     
     try {
-      // Simulate API call with mock data
+      // Create form data for the image
+      const formData = new FormData();
+      formData.append('image', image);
+
+      // TODO: Replace with actual API call to search endpoint
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Mock search results
       const mockResults = [
         {
           id: 1,
-          image: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+          image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAA...', // Base64 image data
           title: 'Black Leather Wallet',
           location: 'Found in Cafeteria',
           date: '2023-05-15',
@@ -103,21 +98,12 @@ const Feature = () => {
         },
         {
           id: 2,
-          image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+          image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAA...', // Base64 image data
           title: 'Black Wallet',
           location: 'Lost at Library',
           date: '2023-05-10',
           status: 'lost',
           contact: 'john.doe@example.com'
-        },
-        {
-          id: 3,
-          image: 'https://images.unsplash.com/photo-1542037104857-ffbb0b9155fb?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-          title: 'Leather Wallet with Cards',
-          location: 'Found at Parking Lot',
-          date: '2023-05-12',
-          status: 'found',
-          contact: 'lostandfound@example.com'
         }
       ];
       
@@ -130,6 +116,7 @@ const Feature = () => {
         confirmButtonText: 'OK'
       });
     } catch (error) {
+      console.error('Search failed:', error);
       Swal.fire({
         title: 'Search Failed',
         text: 'Could not search for items. Please try again.',
@@ -148,12 +135,19 @@ const Feature = () => {
   };
 
   const claimItem = (itemId) => {
-    Swal.fire({
-      title: 'Claim Item',
-      text: `Contact ${searchResults.find(i => i.id === itemId).contact} to claim this item.`,
-      icon: 'info',
-      confirmButtonText: 'OK'
-    });
+    const item = searchResults.find(i => i.id === itemId);
+    if (item) {
+      Swal.fire({
+        title: 'Contact Information',
+        html: `
+          <p>To claim this item, please contact:</p>
+          <p class="mt-2"><strong>${item.contact}</strong></p>
+          <p class="mt-2 text-sm text-gray-600">Please mention the item ID: ${item.id}</p>
+        `,
+        icon: 'info',
+        confirmButtonText: 'OK'
+      });
+    }
   };
 
   return (
@@ -249,32 +243,33 @@ const Feature = () => {
                     <div className="flex justify-center">
                       <CameraIcon className="h-12 w-12 text-[#FF6B00]" />
                     </div>
-                    <div className="flex text-sm text-gray-600">
+                    <div className="text-sm text-gray-600">
+                      <button
+                        onClick={startCamera}
+                        className="px-4 py-2 bg-[#FF6B00] text-white rounded-md hover:bg-[#E65A00] flex items-center mx-auto mb-3 transition-colors duration-200"
+                      >
+                        <CameraIcon className="h-5 w-5 mr-2" />
+                        Use Camera
+                      </button>
                       <label
                         htmlFor="file-upload"
-                        className="relative cursor-pointer rounded-md font-medium text-[#FF6B00] hover:text-[#E65A00] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#FF6B00]"
+                        className="relative cursor-pointer bg-white rounded-md font-medium text-[#FF6B00] hover:text-[#E65A00] focus-within:outline-none"
                       >
                         <span>Upload a file</span>
                         <input
                           id="file-upload"
                           name="file-upload"
                           type="file"
-                          className="sr-only"
                           accept="image/*"
+                          className="sr-only"
                           onChange={handleImageUpload}
-                          ref={fileInputRef}
                         />
                       </label>
                       <p className="pl-1">or drag and drop</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        PNG, JPG, GIF up to 10MB
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                    <button
-                      onClick={startCamera}
-                      className="px-4 py-2 bg-[#FF6B00] text-white rounded-md hover:bg-[#E65A00] flex items-center justify-center mx-auto transition-colors duration-200"
-                    >
-                      <CameraIcon className="h-5 w-5 mr-2" />
-                      Use Camera
-                    </button>
                   </div>
                 </div>
               )}
@@ -354,4 +349,4 @@ const Feature = () => {
   );
 };
 
-export default Feature;
+export default BrowseItems;

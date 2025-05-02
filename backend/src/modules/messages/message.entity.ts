@@ -9,11 +9,11 @@ export class Message {
   @Prop({ required: true })
   content: string;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
-  sender: User;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  senderId: string;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
-  receiver: User;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  receiverId: string;
 
   @Prop({ default: false })
   isRead: boolean;
@@ -25,4 +25,4 @@ export class Message {
   updatedAt: Date;
 }
 
-export const MessageSchema = SchemaFactory.createForClass(Message); 
+export const MessageSchema = SchemaFactory.createForClass(Message);

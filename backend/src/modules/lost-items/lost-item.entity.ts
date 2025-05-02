@@ -9,14 +9,20 @@ export class LostItem {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   userId: User;
 
-  @Prop({ required: true })
-  image: string;
+  @Prop({ type: Buffer, required: false })
+  image: Buffer;
+
+  @Prop({ required: false })
+  imageContentType: string;
 
   @Prop({ required: true })
   description: string;
 
   @Prop({ required: true })
   location: string;
+
+  @Prop({ required: true })
+  contactNumber: string;
 
   @Prop({ required: true })
   category: string;
@@ -28,4 +34,4 @@ export class LostItem {
   createdAt: Date;
 }
 
-export const LostItemSchema = SchemaFactory.createForClass(LostItem); 
+export const LostItemSchema = SchemaFactory.createForClass(LostItem);

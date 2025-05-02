@@ -16,9 +16,6 @@ export class SocialLinksDto {
 }
 
 export class UpdateUserDto {
-  @IsString()
-  @IsOptional()
-  name?: string;
 
   @IsString()
   @IsOptional()
@@ -67,4 +64,4 @@ export class UpdateUserDto {
   @Matches(/^\+[0-9]{1,4}[0-9]{9,}$/, { message: 'Mobile number must include country code and be valid' })
   @IsOptional()
   mobileNumber?: string;
-} 
+}

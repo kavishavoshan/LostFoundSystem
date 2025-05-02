@@ -11,8 +11,8 @@ from torchvision.models import resnet50
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000"],
-        "methods": ["OPTIONS", "GET", "POST"],
+        "origins": "*",
+        "methods": ["POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }
 })
@@ -31,19 +31,13 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def load_ml_model():
     global model
     if model is None and os.path.exists(MODEL_PATH):
-        try:
-            # Initialize the model architecture
-            model = resnet50(pretrained=False)  # Adjust number of classes if needed
-            model.fc = torch.nn.Linear(model.fc.in_features, len(CATEGORIES))
-            
-            # Load the state dictionary
-            state_dict = torch.load(MODEL_PATH, map_location=device)
-            model.load_state_dict(state_dict)
-            model.to(device)
-            model.eval()  # Set to evaluation mode
-        except Exception as e:
-            print(f"Error loading model: {str(e)}")
-            model = None
+        model = resnet50(pretrained=False)
+        model.fc = torch.nn.Linear(2048, len(CATEGORIES))
+        model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+        model.to(device)
+        model.eval()
+        print("Model loaded successfully")
+    return model
 
 # Define image transformations
 transform = transforms.Compose([
@@ -53,30 +47,31 @@ transform = transforms.Compose([
                        std=[0.229, 0.224, 0.225])
 ])
 
-def preprocess_image(image):
-    img = Image.open(image).convert('RGB')
+def preprocess_image(image_file):
+    img = Image.open(image_file).convert('RGB')
     img_tensor = transform(img)
-    img_tensor = img_tensor.unsqueeze(0)  # Add batch dimension
-    return img_tensor
+    return img_tensor.unsqueeze(0)
 
-@app.route('/upload-found-item', methods=['POST'])
+@app.route('/predict', methods=['POST'])
 def predict_category():
-    print("Received request to /upload-found-item")
+    print("Received request to /predict")
     print("Request files:", request.files)
-    print("Request files['image']:", request.files['file'] )
-    if 'file' not in request.files:
-        return jsonify({'error': 'No image provided'}), 400
+    
+    if 'image' not in request.files:
+        print("No image found in request")
+        return jsonify({'error': 'No image provided', 'predicted_category': 'Unknown'}), 400
 
     try:
-        image_file = request.files['file']
+        image_file = request.files['image']
+        print("Processing image:", image_file.filename)
         img_tensor = preprocess_image(image_file)
         
         # Load model if not loaded
         load_ml_model()
         
         if model is None:
-            # If model is not available, return Unknown category
-            return jsonify({'category': 'Unknown'})
+            print("Model not available")
+            return jsonify({'predicted_category': 'Unknown'})
         
         # Move tensor to the same device as model
         img_tensor = img_tensor.to(device)
@@ -88,19 +83,23 @@ def predict_category():
             predicted_class = torch.argmax(probabilities[0]).item()
             confidence = probabilities[0][predicted_class].item()
         
-        # Map to category name
         predicted_category = CATEGORIES[predicted_class]
+        print(f"Predicted category: {predicted_category} with confidence: {confidence:.2f}")
         
         return jsonify({
-            'category': predicted_category,
+            'predicted_category': predicted_category,
             'confidence': float(confidence)
         })
-
+        
     except Exception as e:
-        print(f"Error processing image: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        print(f"Error during prediction: {str(e)}")
+        return jsonify({'error': str(e), 'predicted_category': 'Unknown'}), 500
 
 if __name__ == '__main__':
     # Create model directory if it doesn't exist
     os.makedirs('model', exist_ok=True)
-    app.run(port=5000, debug=True) 
+    app.run(port=5001, debug=True)
+
+
+
+
