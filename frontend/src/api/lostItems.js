@@ -3,9 +3,9 @@ import axios from "axios";
 const API_BASE_URL = "http://localhost:3001/lost-items";
 
 // ✅ GET all lost items
-export const getLostItems = async () => {
+export const getLostItems = async (userId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}`);
+    const response = await axios.get(`${API_BASE_URL}/user/${userId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching lost items:", error);
