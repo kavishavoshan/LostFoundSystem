@@ -599,8 +599,7 @@ const Conversation = ({ userId, socket }) => {
                     <button onClick={() => setEditingMessageId(null)} className="text-red-600 hover:text-red-800">
                       <XMarkIcon className="h-5 w-5" />
                     </button>
-                  </div>
-                ) : (
+                  </div>                ) : (
                   <div className="flex flex-col">
                     {message.attachmentUrl && (
                       <div className="mb-2">
