@@ -5,7 +5,7 @@ const PasswordInput = ({
   name, 
   value, 
   onChange, 
-  placeholder = "••••••••", 
+  placeholder = "Enter your password", 
   autoComplete, 
   required = false,
   className = "",

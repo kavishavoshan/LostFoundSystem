@@ -132,6 +132,7 @@ const Login = () => {
                     name="email"
                     type="email"
                     autoComplete="email"
+                    placeholder="Enter your email"
                     required
                     value={formData.email}
                     onChange={handleChange}
