@@ -67,7 +67,7 @@ const createLostItem = async (itemData) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/lost-items`, {
       ...itemData,
-      userId: DEFAULT_USER_ID // Always use the hardcoded user ID
+      userId: DEFAULT_USER_ID, // Use the constant for the user ID
     });
     return response.data;
   } catch (error) {
@@ -80,7 +80,7 @@ const createFoundItem = async (itemData) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/found-items`, {
       ...itemData,
-      userId: DEFAULT_USER_ID // Always use the hardcoded user ID
+      userId: DEFAULT_USER_ID, // Always use the hardcoded user ID
     });
     return response.data;
   } catch (error) {
@@ -332,40 +332,40 @@ function UserTable() {
     }
   };
   const generateReport = async (item) => {
-  try {
-    Swal.fire({
-      title: "Generating Report...",
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-    });
+    try {
+      Swal.fire({
+        title: "Generating Report...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
 
-    const userInfo = getUserInfo(item.userId);
+      const userInfo = getUserInfo(item.userId);
 
-    // Create comprehensive report data
-    const reportData = {
-      reportId: `REP-${Date.now().toString().slice(-6)}`,
-      itemId: item._id,
-      itemType: item.type.toUpperCase(),
-      category: item.category,
-      description: item.description,
-      location: item.location,
-      dateReported: formatDate(item.createdAt),
-      lastUpdated: formatDate(item.updatedAt || item.createdAt),
-      status: item.status,
-      userInformation: {
-        name: userInfo.name,
-        email: userInfo.email,
-        phone: userInfo.mobileNumber || item.contactNumber || "Not provided",
-      },
-      reclaimStatus: item.status === "found" ? "Available" : "Not Reclaimed",
-      reclaimDate: item.status === "found" ? "N/A" : "Pending",
-      adminNotes: "",
-    };
+      // Create comprehensive report data
+      const reportData = {
+        reportId: `REP-${Date.now().toString().slice(-6)}`,
+        itemId: item._id,
+        itemType: item.type.toUpperCase(),
+        category: item.category,
+        description: item.description,
+        location: item.location,
+        dateReported: formatDate(item.createdAt),
+        lastUpdated: formatDate(item.updatedAt || item.createdAt),
+        status: item.status,
+        userInformation: {
+          name: userInfo.name,
+          email: userInfo.email,
+          phone: userInfo.mobileNumber || item.contactNumber || "Not provided",
+        },
+        reclaimStatus: item.status === "found" ? "Available" : "Not Reclaimed",
+        reclaimDate: item.status === "found" ? "N/A" : "Pending",
+        adminNotes: "",
+      };
 
-    // Generate HTML for the report preview
-    const reportHTML = `
+      // Generate HTML for the report preview
+      const reportHTML = `
       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-4xl mx-auto">
   <!-- Report Header -->
   <div class="border-b border-gray-200 pb-6 mb-6">
@@ -375,8 +375,12 @@ function UserTable() {
         <p class="text-blue-600 font-medium mt-1">Item Reclamation Document</p>
       </div>
       <div class="text-right">
-        <p class="text-sm text-gray-500">Report ID: <span class="font-medium text-gray-700">${reportData.reportId}</span></p>
-        <p class="text-sm text-gray-500">Generated: <span class="font-medium text-gray-700">${formatDate(new Date())}</span></p>
+        <p class="text-sm text-gray-500">Report ID: <span class="font-medium text-gray-700">${
+          reportData.reportId
+        }</span></p>
+        <p class="text-sm text-gray-500">Generated: <span class="font-medium text-gray-700">${formatDate(
+          new Date()
+        )}</span></p>
       </div>
     </div>
   </div>
@@ -410,7 +414,9 @@ function UserTable() {
         </div>
         <div class="flex">
           <span class="w-32 text-gray-600 font-medium">Status:</span>
-          <span class="font-semibold ${item.status === 'found' ? 'text-green-600' : 'text-red-600'}">
+          <span class="font-semibold ${
+            item.status === "found" ? "text-green-600" : "text-red-600"
+          }">
             ${reportData.status.toUpperCase()}
           </span>
         </div>
@@ -436,16 +442,24 @@ function UserTable() {
         </div>
         <div class="flex">
           <span class="w-32 text-gray-600 font-medium">Reclaim Status:</span>
-          <span class="font-medium ${reportData.reclaimStatus === 'Available' ? 'text-blue-600' : 'text-gray-600'}">
+          <span class="font-medium ${
+            reportData.reclaimStatus === "Available"
+              ? "text-blue-600"
+              : "text-gray-600"
+          }">
             ${reportData.reclaimStatus}
           </span>
         </div>
-        ${reportData.reclaimStatus !== "Available" ? `
+        ${
+          reportData.reclaimStatus !== "Available"
+            ? `
         <div class="flex">
           <span class="w-32 text-gray-600 font-medium">Reclaim Date:</span>
           <span class="text-gray-800">${reportData.reclaimDate}</span>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
       </div>
     </div>
   </div>
@@ -465,7 +479,9 @@ function UserTable() {
       </div>
       <div>
         <p class="text-sm text-gray-600 font-medium">EMAIL ADDRESS</p>
-        <p class="text-gray-800">${reportData.userInformation.email || 'Not provided'}</p>
+        <p class="text-gray-800">${
+          reportData.userInformation.email || "Not provided"
+        }</p>
       </div>
       <div>
         <p class="text-sm text-gray-600 font-medium">PHONE NUMBER</p>
@@ -482,44 +498,53 @@ function UserTable() {
       </svg>
       ADMINISTRATIVE NOTES
     </h2>
-    <textarea id="reportNotes" class="w-full px-4 py-3 text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="4" placeholder="Enter official notes regarding this case...">${reportData.adminNotes}</textarea>
+    <textarea id="reportNotes" class="w-full px-4 py-3 text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="4" placeholder="Enter official notes regarding this case...">${
+      reportData.adminNotes
+    }</textarea>
   </div>
 
   <!-- Footer -->
   <div class="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
     <p>This document is an official record of the Lost & Found Property System</p>
-    <p class="mt-1">Document ID: ${reportData.reportId} • Generated on ${new Date().toLocaleString()}</p>
+    <p class="mt-1">Document ID: ${
+      reportData.reportId
+    } • Generated on ${new Date().toLocaleString()}</p>
   </div>
 </div>
     `;
 
-    // Show the report with options to print or download
-    const { value: formValues, isConfirmed, isDenied } = await Swal.fire({
-      title: "Item Report",
-      html: reportHTML,
-      width: '80%',
-      showCancelButton: true,
-      confirmButtonText: "Print Report",
-      cancelButtonText: "Download as PDF",
-      showDenyButton: true,
-      denyButtonText: "Download as JSON",
-      footer: '<p class="text-sm text-gray-500">This is an official report from the Lost & Found System</p>',
-      preConfirm: () => {
-        return {
-          notes: document.getElementById('reportNotes').value
-        };
+      // Show the report with options to print or download
+      const {
+        value: formValues,
+        isConfirmed,
+        isDenied,
+      } = await Swal.fire({
+        title: "Item Report",
+        html: reportHTML,
+        width: "80%",
+        showCancelButton: true,
+        confirmButtonText: "Print Report",
+        cancelButtonText: "Download as PDF",
+        showDenyButton: true,
+        denyButtonText: "Download as JSON",
+        footer:
+          '<p class="text-sm text-gray-500">This is an official report from the Lost & Found System</p>',
+        preConfirm: () => {
+          return {
+            notes: document.getElementById("reportNotes").value,
+          };
+        },
+      });
+
+      // Update report with admin notes if added
+      if (formValues) {
+        reportData.adminNotes = formValues.notes;
       }
-    });
 
-    // Update report with admin notes if added
-    if (formValues) {
-      reportData.adminNotes = formValues.notes;
-    }
-
-    if (isConfirmed) {
-      // Print functionality
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
+      if (isConfirmed) {
+        // Print functionality
+        const printWindow = window.open("", "_blank");
+        printWindow.document.write(`
         <html>
           <head>
             <title>Report ${reportData.reportId}</title>
@@ -536,38 +561,64 @@ function UserTable() {
           <body>
             <h1>Lost & Found Item Report</h1>
             <p><span class="label">Report ID:</span> ${reportData.reportId}</p>
-            <p><span class="label">Generated on:</span> ${formatDate(new Date())}</p>
+            <p><span class="label">Generated on:</span> ${formatDate(
+              new Date()
+            )}</p>
             
             <div class="section">
               <h2>Item Details</h2>
               <p><span class="label">Type:</span> ${reportData.itemType}</p>
               <p><span class="label">Category:</span> ${reportData.category}</p>
-              <p><span class="label">Description:</span> ${reportData.description}</p>
+              <p><span class="label">Description:</span> ${
+                reportData.description
+              }</p>
               <p><span class="label">Location:</span> ${reportData.location}</p>
-              <p><span class="label">Status:</span> <span class="${item.status === 'found' ? 'status-found' : 'status-lost'}">${reportData.status}</span></p>
+              <p><span class="label">Status:</span> <span class="${
+                item.status === "found" ? "status-found" : "status-lost"
+              }">${reportData.status}</span></p>
             </div>
             
             <div class="section">
               <h2>Timeline</h2>
-              <p><span class="label">Date Reported:</span> ${reportData.dateReported}</p>
-              <p><span class="label">Last Updated:</span> ${reportData.lastUpdated}</p>
-              <p><span class="label">Reclaim Status:</span> ${reportData.reclaimStatus}</p>
-              ${reportData.reclaimStatus !== "Available" ? `<p><span class="label">Reclaim Date:</span> ${reportData.reclaimDate}</p>` : ''}
+              <p><span class="label">Date Reported:</span> ${
+                reportData.dateReported
+              }</p>
+              <p><span class="label">Last Updated:</span> ${
+                reportData.lastUpdated
+              }</p>
+              <p><span class="label">Reclaim Status:</span> ${
+                reportData.reclaimStatus
+              }</p>
+              ${
+                reportData.reclaimStatus !== "Available"
+                  ? `<p><span class="label">Reclaim Date:</span> ${reportData.reclaimDate}</p>`
+                  : ""
+              }
             </div>
             
             <div class="section">
               <h2>User Information</h2>
-              <p><span class="label">Name:</span> ${reportData.userInformation.name}</p>
-              <p><span class="label">Email:</span> ${reportData.userInformation.email || 'Not provided'}</p>
-              <p><span class="label">Phone:</span> ${reportData.userInformation.phone}</p>
+              <p><span class="label">Name:</span> ${
+                reportData.userInformation.name
+              }</p>
+              <p><span class="label">Email:</span> ${
+                reportData.userInformation.email || "Not provided"
+              }</p>
+              <p><span class="label">Phone:</span> ${
+                reportData.userInformation.phone
+              }</p>
             </div>
             
-            ${reportData.adminNotes ? `
+            ${
+              reportData.adminNotes
+                ? `
             <div class="section">
               <h2>Admin Notes</h2>
               <p>${reportData.adminNotes}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             
             <div class="footer">
               <p>This is an official report from the Lost & Found System</p>
@@ -576,90 +627,100 @@ function UserTable() {
           </body>
         </html>
       `);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    } else if (Swal.DismissReason.cancel) {
-      // Generate and download PDF
-      const doc = new jsPDF();
-      
-      // Add report title
-      doc.setFontSize(18);
-      doc.text('Lost & Found Item Report', 105, 15, { align: 'center' });
-      
-      // Add report metadata
-      doc.setFontSize(12);
-      doc.text(`Report ID: ${reportData.reportId}`, 14, 25);
-      doc.text(`Generated on: ${formatDate(new Date())}`, 14, 30);
-      
-      // Add item details
-      doc.setFontSize(14);
-      doc.text('Item Details', 14, 40);
-      doc.setFontSize(12);
-      doc.text(`Type: ${reportData.itemType}`, 14, 50);
-      doc.text(`Category: ${reportData.category}`, 14, 55);
-      doc.text(`Description: ${reportData.description}`, 14, 60);
-      doc.text(`Location: ${reportData.location}`, 14, 65);
-      doc.text(`Status: ${reportData.status}`, 14, 70);
-      
-      // Add timeline
-      doc.setFontSize(14);
-      doc.text('Timeline', 14, 80);
-      doc.setFontSize(12);
-      doc.text(`Date Reported: ${reportData.dateReported}`, 14, 90);
-      doc.text(`Last Updated: ${reportData.lastUpdated}`, 14, 95);
-      doc.text(`Reclaim Status: ${reportData.reclaimStatus}`, 14, 100);
-      if (reportData.reclaimStatus !== "Available") {
-        doc.text(`Reclaim Date: ${reportData.reclaimDate}`, 14, 105);
-      }
-      
-      // Add user information
-      doc.setFontSize(14);
-      doc.text('User Information', 14, 115);
-      doc.setFontSize(12);
-      doc.text(`Name: ${reportData.userInformation.name}`, 14, 125);
-      doc.text(`Email: ${reportData.userInformation.email || 'Not provided'}`, 14, 130);
-      doc.text(`Phone: ${reportData.userInformation.phone}`, 14, 135);
-      
-      // Add admin notes if available
-      if (reportData.adminNotes) {
-        doc.setFontSize(14);
-        doc.text('Admin Notes', 14, 145);
-        doc.setFontSize(12);
-        const splitNotes = doc.splitTextToSize(reportData.adminNotes, 180);
-        doc.text(splitNotes, 14, 155);
-      }
-      
-      // Add footer
-      doc.setFontSize(10);
-      doc.text('This is an official report from the Lost & Found System', 105, 285, { align: 'center' });
-      
-      // Save the PDF
-      doc.save(`lost_found_report_${reportData.reportId}.pdf`);
-      
-    } else if (isDenied) {
-      // Download as JSON
-      const dataStr = JSON.stringify(reportData, null, 2);
-      const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-      const exportFileName = `lost_found_report_${reportData.reportId}.json`;
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 500);
+      } else if (Swal.DismissReason.cancel) {
+        // Generate and download PDF
+        const doc = new jsPDF();
 
-      const linkElement = document.createElement("a");
-      linkElement.setAttribute("href", dataUri);
-      linkElement.setAttribute("download", exportFileName);
-      linkElement.click();
+        // Add report title
+        doc.setFontSize(18);
+        doc.text("Lost & Found Item Report", 105, 15, { align: "center" });
+
+        // Add report metadata
+        doc.setFontSize(12);
+        doc.text(`Report ID: ${reportData.reportId}`, 14, 25);
+        doc.text(`Generated on: ${formatDate(new Date())}`, 14, 30);
+
+        // Add item details
+        doc.setFontSize(14);
+        doc.text("Item Details", 14, 40);
+        doc.setFontSize(12);
+        doc.text(`Type: ${reportData.itemType}`, 14, 50);
+        doc.text(`Category: ${reportData.category}`, 14, 55);
+        doc.text(`Description: ${reportData.description}`, 14, 60);
+        doc.text(`Location: ${reportData.location}`, 14, 65);
+        doc.text(`Status: ${reportData.status}`, 14, 70);
+
+        // Add timeline
+        doc.setFontSize(14);
+        doc.text("Timeline", 14, 80);
+        doc.setFontSize(12);
+        doc.text(`Date Reported: ${reportData.dateReported}`, 14, 90);
+        doc.text(`Last Updated: ${reportData.lastUpdated}`, 14, 95);
+        doc.text(`Reclaim Status: ${reportData.reclaimStatus}`, 14, 100);
+        if (reportData.reclaimStatus !== "Available") {
+          doc.text(`Reclaim Date: ${reportData.reclaimDate}`, 14, 105);
+        }
+
+        // Add user information
+        doc.setFontSize(14);
+        doc.text("User Information", 14, 115);
+        doc.setFontSize(12);
+        doc.text(`Name: ${reportData.userInformation.name}`, 14, 125);
+        doc.text(
+          `Email: ${reportData.userInformation.email || "Not provided"}`,
+          14,
+          130
+        );
+        doc.text(`Phone: ${reportData.userInformation.phone}`, 14, 135);
+
+        // Add admin notes if available
+        if (reportData.adminNotes) {
+          doc.setFontSize(14);
+          doc.text("Admin Notes", 14, 145);
+          doc.setFontSize(12);
+          const splitNotes = doc.splitTextToSize(reportData.adminNotes, 180);
+          doc.text(splitNotes, 14, 155);
+        }
+
+        // Add footer
+        doc.setFontSize(10);
+        doc.text(
+          "This is an official report from the Lost & Found System",
+          105,
+          285,
+          { align: "center" }
+        );
+
+        // Save the PDF
+        doc.save(`lost_found_report_${reportData.reportId}.pdf`);
+      } else if (isDenied) {
+        // Download as JSON
+        const dataStr = JSON.stringify(reportData, null, 2);
+        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(
+          dataStr
+        )}`;
+        const exportFileName = `lost_found_report_${reportData.reportId}.json`;
+
+        const linkElement = document.createElement("a");
+        linkElement.setAttribute("href", dataUri);
+        linkElement.setAttribute("download", exportFileName);
+        linkElement.click();
+      }
+    } catch (error) {
+      console.error("Error generating report:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to generate report. Please try again.",
+      });
     }
-  } catch (error) {
-    console.error("Error generating report:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Failed to generate report. Please try again.",
-    });
-  }
-};
+  };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -673,46 +734,88 @@ function UserTable() {
     try {
       const userInfo = getUserInfo(item.userId);
 
-      if (!userInfo.email) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Cannot send email - no email found for this user.",
-        });
-        return;
-      }
-
-      Swal.fire({
-        title: "Sending email...",
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
+      const { value: emailContent } = await Swal.fire({
+        title: "Compose Email",
+        html: `
+          <div class="text-left">
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2">To:</label>
+              <input 
+                id="swal-to" 
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                value="thinaldilmith2002@gmail.com" 
+                readonly
+              >
+            </div>
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2">Subject:</label>
+              <input 
+                id="swal-subject" 
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                value="Regarding your ${item.status} item (${item.category})"
+              >
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-bold mb-2">Message:</label>
+              <textarea 
+                id="swal-message" 
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32" 
+                placeholder="Type your message here..."
+              >Dear ${userInfo.name || "User"},
+  
+  This is regarding your ${item.status} item (${item.category}) at ${
+          item.location
+        }.
+  
+  </textarea>
+            </div>
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: "Send Email",
+        cancelButtonText: "Cancel",
+        preConfirm: () => {
+          return {
+            to: document.getElementById("swal-to").value,
+            subject: document.getElementById("swal-subject").value,
+            message: document.getElementById("swal-message").value,
+          };
         },
       });
 
-      // EmailJS service parameters
-      const templateParams = {
-        to_email: userInfo.email,
-        status: item.status,
-        category: item.category,
-        location: item.location,
-        description: item.description,
-        from_name: "Lost & Found Team",
-      };
+      if (emailContent) {
+        Swal.fire({
+          title: "Sending email...",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
 
-      // Send email using EmailJS
-      await emailjs.send(
-        "service_6kn06l7", // Your EmailJS Service ID
-        "template_your_template_id", // Your EmailJS Template ID
-        templateParams,
-        "lIwc1XWfTvsLQs0zu" // Your EmailJS User ID
-      );
+        // EmailJS service parameters
+        const templateParams = {
+          to_email: emailContent.to,
+          subject: emailContent.subject,
+          message: emailContent.message,
+          from_name: "RecLaim Lost & Found",
+          reply_to: "noreply@reclaim.com",
+        };
 
-      Swal.fire(
-        "Email Sent!",
-        `Your message has been sent to ${userInfo.email}.`,
-        "success"
-      );
+        // Send email using EmailJS
+        await emailjs.send(
+          "service_6kn06l7",
+          "template_szxuqi8",
+          templateParams,
+          "lIwc1XWfTvsLQs0zu"
+        );
+
+        Swal.fire(
+          "Email Sent!",
+          "Your message has been sent successfully.",
+          "success"
+        );
+      }
     } catch (error) {
       console.error("Error sending email:", error);
       Swal.fire({
@@ -1017,8 +1120,15 @@ function UserTable() {
       </div>
 
       {/* Lost Item Form Dialog */}
-      <Dialog open={showLostModal} onClose={handleCloseLostForm} className="relative z-50">
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+      <Dialog
+        open={showLostModal}
+        onClose={handleCloseLostForm}
+        className="relative z-50"
+      >
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+          aria-hidden="true"
+        />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <Dialog.Title className="text-xl font-bold text-[#0B1829] mb-4 text-center border-b pb-2">
@@ -1034,8 +1144,15 @@ function UserTable() {
       </Dialog>
 
       {/* Found Item Form Dialog */}
-      <Dialog open={showFoundModal} onClose={handleCloseFoundForm} className="relative z-50">
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+      <Dialog
+        open={showFoundModal}
+        onClose={handleCloseFoundForm}
+        className="relative z-50"
+      >
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+          aria-hidden="true"
+        />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <Dialog.Title className="text-xl font-bold text-[#0B1829] mb-4 text-center border-b pb-2">
