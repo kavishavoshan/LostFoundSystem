@@ -78,12 +78,12 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Total Items</h3>
           <div className="text-3xl font-bold">
-            {reportData?.totalLostItems + reportData?.totalFoundItems}
+            {(reportData?.totalLostItems || 0) + (reportData?.totalFoundItems || 0)}
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Return Rate</h3>
-          <div className="text-3xl font-bold">{reportData?.returnRate}%</div>
+          <div className="text-3xl font-bold">{reportData?.returnRate ?? 0}%</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Report Generated</h3>
@@ -99,11 +99,11 @@ const Analytics = () => {
           <Chart
             type="bar"
             data={{
-              labels: reportData?.commonLostItems.map(item => item.name) || [],
+              labels: reportData?.commonLostItems?.map(item => item.name) || [],
               datasets: [
                 {
                   label: 'Number of Items',
-                  data: reportData?.commonLostItems.map(item => item.count) || [],
+                  data: reportData?.commonLostItems?.map(item => item.count) || [],
                   backgroundColor: 'rgba(59, 130, 246, 0.5)',
                 }
               ]
@@ -115,10 +115,10 @@ const Analytics = () => {
           <Chart
             type="pie"
             data={{
-              labels: reportData?.frequentLocations.map(location => location.name) || [],
+              labels: reportData?.frequentLocations?.map(location => location.name) || [],
               datasets: [
                 {
-                  data: reportData?.frequentLocations.map(location => location.count) || [],
+                  data: reportData?.frequentLocations?.map(location => location.count) || [],
                   backgroundColor: [
                     'rgba(59, 130, 246, 0.5)',
                     'rgba(16, 185, 129, 0.5)',
@@ -136,4 +136,4 @@ const Analytics = () => {
   );
 };
 
-export default Analytics; 
+export default Analytics;
