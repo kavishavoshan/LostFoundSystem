@@ -12,14 +12,7 @@ import { exportToExcel, exportToCSV, exportToPDF } from "../../utils/exportUtils
 import { deleteLostItem } from '../../api/lostItems';
 import { deleteFoundItem } from '../../api/foundItems';
 
-const columns = [
-  { field: "id", headerName: "ID", width: 70 },
-  { field: "itemName", headerName: "Item Name", flex: 1 },
-  { field: "location", headerName: "Location", flex: 1 },
-  { field: "contact", headerName: "Contact", flex: 1 },
-  { field: "category", headerName: "Category", flex: 1 },
-  { field: "action", headerName: "Actions", flex: 1 }
-];
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("lost");
@@ -28,7 +21,44 @@ const Dashboard = () => {
   const [foundItemRows, setFoundItemRows] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToEdit, setItemToEdit] = useState(null);
 
+  const columns = [
+    { field: "id", headerName: "ID", width: 70 },
+    { field: "itemName", headerName: "Item Description", flex: 1 },
+    { field: "location", headerName: "Location", flex: 1 },
+    { field: "contact", headerName: "Contact", flex: 1 },
+    { field: "category", headerName: "Category", flex: 1 },
+    {
+      field: "action",
+      headerName: "Actions",
+      flex: 1,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-4">
+          <button
+            className="text-blue-600 hover:text-blue-800"
+            onClick={() => {
+              setItemToEdit(params.row); // You can define and use this if editing is needed
+              setShowModal(true);
+            }}
+          >
+            <FiEdit2 size={18} />
+          </button>
+          <button
+            className="text-red-600 hover:text-red-800"
+            onClick={() => {
+              setItemToDelete(params.row);
+              setShowDeleteModal(true);
+            }}
+          >
+            <FiTrash2 size={18} />
+          </button>
+        </div>
+      )
+    }
+  ];
+  
   const handleOpenForm = () => setShowModal(true);
   const handleCloseForm = () => setShowModal(false);
 
@@ -38,8 +68,8 @@ const Dashboard = () => {
 
     setLostItemRows(lostItems.map((item) => ({
       id: item._id,
-      itemName: item.itemName,
-      location: item.lostLocation,
+      itemName: item.description,
+      location: item.location,
       contact: item.contactNumber,
       category: item.category || 'Unknown',
       actions: "edit"
@@ -47,8 +77,8 @@ const Dashboard = () => {
 
     setFoundItemRows(foundItems.map((item) => ({
       id: item._id,
-      itemName: item.itemName,
-      location: item.foundLocation,
+      itemName: item.description,
+      location: item.location,
       contact: item.contactNumber,
       category: item.category || 'Unknown',
       actions: "edit"
@@ -168,8 +198,10 @@ const Dashboard = () => {
               </Dialog.Title>
               <ItemForm
                 type={activeTab}
+                item={itemToEdit} // <- new
                 onClose={() => {
                   handleCloseForm();
+                  setItemToEdit(null);
                   fetchItems();
                 }}
               />
