@@ -3,7 +3,7 @@ import { getMessages, sendMessage, deleteMessage, markMessageAsRead } from '../.
 import { format } from 'date-fns';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-// Import necessary icons, including PaperClipIcon
+// Import necessary icons
 import { PaperClipIcon, TrashIcon, PencilIcon, XMarkIcon, PaperAirplaneIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline'; 
 
 const API_URL = 'http://localhost:3001';
@@ -11,15 +11,7 @@ const API_URL = 'http://localhost:3001';
 const Conversation = ({ userId, socket }) => {
   const { user } = useAuth(); // Get current user from AuthContext
 
-  // ADDED: Log the raw user object from context
-  console.log('[Conversation Render] Raw user object from useAuth:', user);
-
-  // REMOVED: currentUserId derivation moved inside useEffect
-
-  // ADD LOGS HERE (outside useEffect)
-  console.log('[Conversation Render] Props:', { userId, socket });
-  console.log('[Conversation Render] Auth user state:', user);
-  // console.log('[Conversation Render] Derived currentUserId:', currentUserId); // Removed as it's derived later
+  // State for messages and UI
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -28,12 +20,18 @@ const Conversation = ({ userId, socket }) => {
   const [editContent, setEditContent] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [messageStatus, setMessageStatus] = useState({});
+  
+  // Refs
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const retryTimeoutRef = useRef(null);
 
-  // Derive currentUserId outside useEffect, but ensure it updates if user changes
+  // Derive currentUserId from user object
   const currentUserId = user && (user._id || user.id);
 
+  // Function to scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -41,82 +39,95 @@ const Conversation = ({ userId, socket }) => {
   // Effect for fetching messages when userId or currentUser changes
   useEffect(() => {
     const fetchMessages = async () => {
-      console.log('[Conversation fetchEffect] Running fetch effect. Props:', { userId });
-      console.log('[Conversation fetchEffect] Current auth user state:', user);
-      console.log('[Conversation fetchEffect] Derived currentUserId:', currentUserId);
+      // Clear any existing retry timeout
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
 
       // Ensure both IDs are present before attempting to fetch
       if (!currentUserId || !userId) {
-        console.warn('[Conversation fetchEffect] Skipping fetch: Missing user information.', { currentUserId, userId });
+        console.warn('[Conversation] Skipping fetch: Missing user information.', { currentUserId, userId });
         setMessages([]); // Clear messages if IDs are missing
-        if (!loading) setLoading(true); // Reset loading state if needed
-        setError(null); // Clear any previous error
+        setLoading(false);
+        setError(null);
         return;
       }
 
-      let fetchAttempted = false;
       try {
         setLoading(true);
-        fetchAttempted = true;
-        console.log('[Conversation fetchEffect] Proceeding to fetch messages between', currentUserId, 'and', userId);
-        const fetchedMessages = await getMessages(userId, currentUserId);
-        console.log('[Conversation fetchEffect] Fetched messages:', fetchedMessages);
-        setMessages(fetchedMessages);
-
-        // Mark unread messages as read (consider moving this logic if needed)
-        const unreadMessages = fetchedMessages.filter(
-          msg => msg.senderId !== currentUserId && !msg.isRead
-        );
+        setError(null);
         
-        // Process unread messages in a more robust way
-        if (unreadMessages.length > 0) {
-          console.log(`[Conversation] Marking ${unreadMessages.length} messages as read`);
+        console.log('[Conversation] Fetching messages between', currentUserId, 'and', userId);
+        const fetchedMessages = await getMessages(userId, currentUserId);
+        
+        if (Array.isArray(fetchedMessages)) {
+          setMessages(fetchedMessages);
           
-          for (const msg of unreadMessages) {
-            // Enhanced validation for message ID
-            const messageId = msg?.id || msg?._id;
+          // Mark unread messages as read
+          const unreadMessages = fetchedMessages.filter(
+            msg => msg.senderId !== currentUserId && !msg.isRead
+          );
+          
+          if (unreadMessages.length > 0) {
+            console.log(`[Conversation] Marking ${unreadMessages.length} messages as read`);
             
-            if (messageId && currentUserId) {
-              try {
-                // Use await, but don't block UI updates if marking fails
-                markMessageAsRead(messageId, currentUserId).catch(err => {
-                  console.warn(`Failed to mark message ${messageId} as read:`, err);
-                });
-              } catch (markError) {
-                console.error(`Error marking message ${messageId} as read:`, markError);
+            for (const msg of unreadMessages) {
+              const messageId = msg?.id || msg?._id;
+              
+              if (messageId && currentUserId) {
+                try {
+                  await markMessageAsRead(messageId, currentUserId);
+                  
+                  // Emit message read status via socket if connected
+                  if (socket && socket.connected) {
+                    socket.emit('messageStatus', {
+                      messageId: messageId,
+                      status: 'read'
+                    });
+                  }
+                } catch (markError) {
+                  console.warn(`Failed to mark message ${messageId} as read:`, markError);
+                }
               }
-            } else {
-              console.warn('Cannot mark message as read - missing data:', { 
-                messageId: messageId || 'missing', 
-                userId: currentUserId || 'missing',
-                message: msg
-              });
             }
           }
+        } else {
+          console.error('[Conversation] Invalid messages data received:', fetchedMessages);
+          setMessages([]);
+          setError('Invalid data received from server');
         }
-
-        setError(null);
       } catch (err) {
         const errorMessage = err.response?.data?.message || err.message || 'Failed to load messages';
+        console.error('[Conversation] Error fetching messages:', err);
         setError(`Error: ${errorMessage}`);
-        console.error('[Conversation fetchEffect] Error fetching messages:', err);
-        setMessages([]); // Clear messages on error
+        
+        // Set up retry after 10 seconds
+        retryTimeoutRef.current = setTimeout(() => {
+          console.log('[Conversation] Retrying message fetch...');
+          fetchMessages();
+        }, 10000);
       } finally {
-        if (fetchAttempted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchMessages();
-  }, [userId, user]); // Depend only on userId and user for fetching
+    
+    // Cleanup function
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, [userId, currentUserId, socket]);
 
   // Effect for scrolling when messages change
   useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom();
     }
-  }, [messages]); // Depend only on messages for scrolling
+  }, [messages]);
 
   // State for typing indicator
   const [isTyping, setIsTyping] = useState(false);
@@ -126,11 +137,11 @@ const Conversation = ({ userId, socket }) => {
   // Effect for setting up socket listeners
   useEffect(() => {
     if (!socket || !currentUserId || !userId) {
-      // Don't set up listeners if socket or necessary IDs aren't ready
       return;
     }
 
-    console.log('[Conversation socketEffect] Setting up socket listeners for user:', userId);
+    console.log('[Conversation] Setting up socket listeners');
+    setReconnecting(false);
 
     const handleNewMessage = (message) => {
       // Check if the message belongs to the current conversation
@@ -138,16 +149,18 @@ const Conversation = ({ userId, socket }) => {
                          (message.senderId === currentUserId && message.receiverId === userId);
 
       if (isRelevant) {
-        console.log('[Socket] Received relevant newMessage:', message);
+        console.log('[Socket] Received new message:', message);
+        
+        // Add message to state if not already present
         setMessages((prevMessages) => {
-          // Avoid adding duplicate messages if already present
-          if (prevMessages.some(msg => (msg.id === message.id) || (msg._id === message._id))) {
+          const messageId = message.id || message._id;
+          if (prevMessages.some(msg => (msg.id === messageId) || (msg._id === messageId))) {
             return prevMessages;
           }
           return [...prevMessages, message];
         });
         
-        // If the other user was typing, reset typing indicator when message is received
+        // Reset typing indicator when message is received
         if (message.senderId === userId) {
           setOtherUserTyping(false);
           
@@ -155,9 +168,8 @@ const Conversation = ({ userId, socket }) => {
           const messageId = message?.id || message?._id;
           
           if (messageId && currentUserId) {
-            console.log(`[Socket] Marking message ${messageId} as read`);
             markMessageAsRead(messageId, currentUserId).catch(err => {
-              console.warn(`[Socket] Failed to mark message ${messageId} as read:`, err);
+              console.warn(`Failed to mark message ${messageId} as read:`, err);
             });
             
             // Emit message read status via socket
@@ -165,40 +177,33 @@ const Conversation = ({ userId, socket }) => {
               messageId: messageId,
               status: 'read'
             });
-          } else {
-            console.warn('[Socket] Cannot mark message as read - missing data:', { 
-              messageId: messageId || 'missing', 
-              userId: currentUserId || 'missing'
-            });
           }
         }
       }
     };
 
     const handleMessageDeleted = (deletedInfo) => {
-      // Ensure deletedInfo contains the messageId and potentially the conversation context
       const messageId = deletedInfo?.messageId;
       if (!messageId) {
-        console.warn('[Socket] Received messageDeleted event with missing messageId:', deletedInfo);
+        console.warn('[Socket] Received messageDeleted event with missing messageId');
         return;
       }
-      console.log('[Socket] Received messageDeleted:', messageId);
+      
+      console.log('[Socket] Message deleted:', messageId);
       setMessages((prevMessages) =>
         prevMessages.filter((msg) => (msg.id !== messageId && msg._id !== messageId))
       );
     };
 
     const handleMessageEdited = (editedMessage) => {
-      // Check if the edited message belongs to the current conversation
       if (!editedMessage) {
-        console.warn('[Socket] Received messageEdited event with invalid message:', editedMessage);
+        console.warn('[Socket] Received messageEdited event with invalid message');
         return;
       }
       
-      // Enhanced validation for message ID
       const messageId = editedMessage?.id || editedMessage?._id;
       if (!messageId) {
-        console.warn('[Socket] Received messageEdited event with missing ID:', editedMessage);
+        console.warn('[Socket] Received messageEdited event with missing ID');
         return;
       }
       
@@ -206,7 +211,7 @@ const Conversation = ({ userId, socket }) => {
                          (editedMessage.senderId === currentUserId && editedMessage.receiverId === userId);
 
       if (isRelevant) {
-        console.log('[Socket] Received messageEdited:', editedMessage);
+        console.log('[Socket] Message edited:', editedMessage);
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             (msg.id === messageId || msg._id === messageId) ? editedMessage : msg
@@ -225,14 +230,11 @@ const Conversation = ({ userId, socket }) => {
     
     // Handle message read status updates
     const handleMessageRead = (readData) => {
-      // Check if this is the simplified format or the detailed format
       const messageId = readData?.messageId;
-      const userId = readData?.userId;
       
       if (messageId) {
         console.log('[Socket] Message read status received:', readData);
         
-        // Handle both formats of read status updates
         setMessages(prevMessages => 
           prevMessages.map(msg => {
             const msgId = msg.id || msg._id;
@@ -246,9 +248,24 @@ const Conversation = ({ userId, socket }) => {
             return msg;
           })
         );
-      } else {
-        console.warn('[Socket] Received messageRead event with missing messageId:', readData);
+        
+        // Update message status in local state
+        setMessageStatus(prev => ({
+          ...prev,
+          [messageId]: { isRead: true, readAt: readData.readAt || new Date() }
+        }));
       }
+    };
+
+    // Handle socket reconnection
+    const handleReconnect = () => {
+      console.log('[Socket] Reconnected');
+      setReconnecting(false);
+    };
+
+    const handleReconnectAttempt = () => {
+      console.log('[Socket] Attempting to reconnect...');
+      setReconnecting(true);
     };
 
     // Register listeners
@@ -257,21 +274,23 @@ const Conversation = ({ userId, socket }) => {
     socket.on('messageEdited', handleMessageEdited);
     socket.on('typing', handleTypingEvent);
     socket.on('messageRead', handleMessageRead);
+    socket.on('reconnect', handleReconnect);
+    socket.on('reconnect_attempt', handleReconnectAttempt);
 
     // Emit join event to server
     socket.emit('join', { userId: currentUserId });
 
     // Cleanup function
     return () => {
-      console.log('[Conversation socketEffect] Cleaning up socket listeners for user:', userId);
       socket.off('newMessage', handleNewMessage);
       socket.off('messageDeleted', handleMessageDeleted);
       socket.off('messageEdited', handleMessageEdited);
       socket.off('typing', handleTypingEvent);
       socket.off('messageRead', handleMessageRead);
+      socket.off('reconnect', handleReconnect);
+      socket.off('reconnect_attempt', handleReconnectAttempt);
     };
-
-  }, [socket, userId, currentUserId]); // Depend on socket, userId, and currentUserId
+  }, [socket, userId, currentUserId]);
 
   // Handle typing indicator
   const handleTyping = (e) => {
@@ -334,11 +353,13 @@ const Conversation = ({ userId, socket }) => {
         }
       }
 
+      // Handle file upload if a file is selected
       if (selectedFile) {
         const formData = new FormData();
         formData.append('file', selectedFile);
 
         try {
+          setUploadProgress(0);
           const uploadResponse = await axios.post(`${API_URL}/messages/upload`, formData, {
             onUploadProgress: (progressEvent) => {
               const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -364,7 +385,25 @@ const Conversation = ({ userId, socket }) => {
         return;
       }
       
-      console.log('Sending message to', userId, ':', messageContent);
+      // Create a temporary message ID for optimistic updates
+      const tempId = `temp-${Date.now()}`;
+      const tempMessage = {
+        _id: tempId,
+        content: messageContent,
+        senderId: currentUserId,
+        receiverId: userId,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        attachmentUrl,
+        sending: true
+      };
+      
+      // Add temporary message to UI immediately
+      setMessages(prev => [...prev, tempMessage]);
+      setNewMessage('');
+      setSelectedFile(null);
+      setUploadProgress(0);
+      scrollToBottom();
       
       // First try to send via socket for real-time delivery
       if (socket && socket.connected) {
@@ -380,25 +419,16 @@ const Conversation = ({ userId, socket }) => {
       const sentMessage = await sendMessage(userId, messageContent, attachmentUrl);
       console.log('Message sent successfully:', sentMessage);
       
-      // Only add to messages if not already added by socket event
-      setMessages(prev => {
-        if (prev.some(msg => 
-          msg.content === messageContent && 
-          msg.senderId === currentUserId && 
-          msg.receiverId === userId &&
-          new Date(msg.createdAt).getTime() > Date.now() - 5000)) {
-          return prev; // Skip if a similar message was recently added (likely from socket)
-        }
-        return [...prev, sentMessage];
-      });
-      
-      setNewMessage('');
-      setSelectedFile(null);
-      setUploadProgress(0);
-      scrollToBottom();
+      // Replace temporary message with actual message
+      setMessages(prev => prev.map(msg => 
+        msg._id === tempId ? sentMessage : msg
+      ));
     } catch (err) {
       console.error('Error sending message:', err);
-      setError('Failed to send message');
+      setError('Failed to send message. Please try again.');
+      
+      // Remove the temporary message on error
+      setMessages(prev => prev.filter(msg => !msg._id.startsWith('temp-')));
     }
   };
 
@@ -411,26 +441,29 @@ const Conversation = ({ userId, socket }) => {
         return;
       }
       
-      // Check if the message can be deleted (same logic as canEditMessage)
+      // Check if the message can be deleted
       if (!canEditMessage(message)) {
         setError('Messages can only be deleted within 15 minutes of sending');
         return;
       }
       
+      // Optimistically remove the message from UI
+      setMessages(prev => prev.filter(msg => (msg.id !== messageId && msg._id !== messageId)));
+      
       // First try to delete via socket for real-time updates
       if (socket && socket.connected) {
-        console.log('[Socket] Emitting deleteMessage event');
         socket.emit('deleteMessage', { messageId });
       }
       
       // Also delete via HTTP API as a fallback
       await deleteMessage(messageId, currentUserId);
-      
-      // Update local state
-      setMessages(prev => prev.filter(msg => (msg.id !== messageId && msg._id !== messageId)));
     } catch (err) {
       console.error('Error deleting message:', err);
       setError(err.message || 'Failed to delete message');
+      
+      // Refresh messages on error
+      const refreshedMessages = await getMessages(userId, currentUserId);
+      setMessages(refreshedMessages);
     }
   };
 
@@ -443,15 +476,23 @@ const Conversation = ({ userId, socket }) => {
         return;
       }
       
-      // Check if the message can be edited (using the canEditMessage function)
+      // Check if the message can be edited
       if (!canEditMessage(message)) {
         setError('Messages can only be edited within 15 minutes of sending');
         return;
       }
       
+      // Optimistically update the message in UI
+      setMessages(prevMessages =>
+        prevMessages.map(msg =>
+          (msg.id === messageId || msg._id === messageId) 
+            ? {...msg, content, isEdited: true} 
+            : msg
+        )
+      );
+      
       // First try to edit via socket for real-time updates
       if (socket && socket.connected) {
-        console.log('[Socket] Emitting editMessage event');
         socket.emit('editMessage', { messageId, content });
       }
       
@@ -461,9 +502,9 @@ const Conversation = ({ userId, socket }) => {
         userId: currentUserId,
       });
       
-      // Update local state
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
+      // Update with server response
+      setMessages(prevMessages =>
+        prevMessages.map(msg =>
           (msg.id === messageId || msg._id === messageId) ? response.data : msg
         )
       );
@@ -473,6 +514,10 @@ const Conversation = ({ userId, socket }) => {
     } catch (err) {
       console.error('Error editing message:', err);
       setError(err.message || 'Failed to edit message');
+      
+      // Refresh messages on error
+      const refreshedMessages = await getMessages(userId, currentUserId);
+      setMessages(refreshedMessages);
     }
   };
 
@@ -495,62 +540,8 @@ const Conversation = ({ userId, socket }) => {
     
     setSelectedFile(file);
     setError(null); // Clear any previous errors
-    
-    // Show a preview for images
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        // You could set an image preview here if you want to add that feature
-        console.log('Image file loaded successfully');
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
-        <div className="text-red-500 text-center">
-          <p className="font-medium">{error}</p>
-          <button
-            onClick={() => {
-              setError(null); // Clear the error
-              setLoading(true); // Set back to loading state
-              // The useEffect hook will automatically attempt to refetch
-              // when the state updates or if dependencies change.
-            }}
-            className="mt-2 text-sm text-blue-600 hover:underline"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Function to get user name from message
-  const getUserName = (message, isCurrentUser) => {
-    if (isCurrentUser) {
-      return user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'You';
-    }
-    
-    // Try to extract name from populated sender/receiver
-    const otherUser = message.senderId === currentUserId ? message.receiverId : message.senderId;
-    if (typeof otherUser === 'object' && otherUser) {
-      return otherUser.firstName ? `${otherUser.firstName} ${otherUser.lastName || ''}` : 'User';
-    }
-    
-    return 'User';
-  };
-  
   // Check if a message can be edited (within 15 minutes)
   const canEditMessage = (message) => {
     if (!message || message.senderId !== currentUserId) return false;
@@ -559,108 +550,176 @@ const Conversation = ({ userId, socket }) => {
     return (now - messageTime) < 15 * 60 * 1000; // 15 minutes
   };
 
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+        <div className="text-gray-600">Loading messages...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="text-red-500 text-center p-4 max-w-md">
+          <p className="font-medium mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              getMessages(userId, currentUserId)
+                .then(msgs => {
+                  setMessages(msgs);
+                  setLoading(false);
+                })
+                .catch(err => {
+                  setError(`Error: ${err.message || 'Failed to load messages'}`);
+                  setLoading(false);
+                });
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Header (Optional - Can display other user's name) */}
-      {/* <div className="p-4 border-b bg-white shadow-sm">
-        <h2 className="font-semibold text-lg">Chat with {userId}</h2>
-      </div> */}
+      {/* Connection status indicator */}
+      {reconnecting && (
+        <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-sm flex items-center justify-center">
+          <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+          Reconnecting to server...
+        </div>
+      )}
 
-      {/* Messages Area - Added custom scrollbar styles */}
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-gray-100">
-        {loading && (
-          <div className="flex justify-center items-center h-full">
-            <ArrowPathIcon className="h-6 w-6 text-gray-500 animate-spin" />
-            <span className="ml-2 text-gray-500">Loading messages...</span>
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <div className="bg-gray-100 p-3 rounded-full mb-3">
+              <PaperAirplaneIcon className="h-6 w-6 text-gray-400" />
+            </div>
+            <p>No messages yet. Start the conversation!</p>
           </div>
-        )}
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        {!loading && messages.map((message) => {
-          const isSender = message.senderId === currentUserId;
-          const messageId = message.id || message._id; // Use consistent ID
-          const showEditDelete = isSender && canEditMessage(message);
+        ) : (
+          messages.map((message) => {
+            const isSender = message.senderId === currentUserId;
+            const messageId = message.id || message._id;
+            const showEditDelete = isSender && canEditMessage(message);
+            const isSending = message.sending === true;
 
-          return (
-            // Add group class for hover effects on children
-            <div key={messageId} className={`flex group ${isSender ? 'justify-end' : 'justify-start'}`}>
-              <div className={`relative max-w-xs lg:max-w-md px-3 py-2 rounded-xl shadow-md ${isSender ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-100'}`}>
-                {editingMessageId === messageId ? (
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="flex-grow p-1 border rounded text-black text-sm"
-                      autoFocus
-                    />
-                    <button onClick={() => handleEditMessage(messageId, editContent)} className="text-green-600 hover:text-green-800">
-                      <CheckIcon className="h-5 w-5" />
-                    </button>
-                    <button onClick={() => setEditingMessageId(null)} className="text-red-600 hover:text-red-800">
-                      <XMarkIcon className="h-5 w-5" />
-                    </button>
-                  </div>                ) : (
-                  <div className="flex flex-col">
-                    {message.attachmentUrl && (
-                      <div className="mb-2">
-                        {message.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null ? (
-                           <img src={message.attachmentUrl} alt="Attachment" className="max-w-full h-auto rounded-lg cursor-pointer" onClick={() => window.open(message.attachmentUrl, '_blank')} />
-                        ) : (
-                          <a href={message.attachmentUrl} target="_blank" rel="noopener noreferrer" className={`flex items-center space-x-2 p-2 rounded-lg ${isSender ? 'bg-blue-400 hover:bg-blue-300' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                            <PaperClipIcon className={`h-5 w-5 ${isSender ? 'text-blue-100' : 'text-gray-600'}`} />
-                            <span className={`text-sm underline ${isSender ? 'text-white' : 'text-blue-700'}`}>
-                              {message.attachmentUrl.split('-').pop().substring(0, 20)}...
-                            </span>
-                          </a>
+            return (
+              <div key={messageId} className={`flex group ${isSender ? 'justify-end' : 'justify-start'}`}>
+                <div 
+                  className={`relative max-w-xs lg:max-w-md px-3 py-2 rounded-xl shadow-md 
+                    ${isSender 
+                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' 
+                      : 'bg-white text-gray-800 border border-gray-100'}
+                    ${isSending ? 'opacity-70' : 'opacity-100'}`
+                  }
+                >
+                  {editingMessageId === messageId ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="flex-grow p-1 border rounded text-black text-sm"
+                        autoFocus
+                      />
+                      <button onClick={() => handleEditMessage(messageId, editContent)} className="text-green-600 hover:text-green-800">
+                        <CheckIcon className="h-5 w-5" />
+                      </button>
+                      <button onClick={() => setEditingMessageId(null)} className="text-red-600 hover:text-red-800">
+                        <XMarkIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {message.attachmentUrl && (
+                        <div className="mb-2">
+                          {message.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null ? (
+                             <img 
+                               src={message.attachmentUrl} 
+                               alt="Attachment" 
+                               className="max-w-full h-auto rounded-lg cursor-pointer" 
+                               onClick={() => window.open(message.attachmentUrl, '_blank')} 
+                             />
+                          ) : (
+                            <a 
+                              href={message.attachmentUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className={`flex items-center space-x-2 p-2 rounded-lg ${isSender ? 'bg-blue-400 hover:bg-blue-300' : 'bg-gray-100 hover:bg-gray-200'}`}
+                            >
+                              <PaperClipIcon className={`h-5 w-5 ${isSender ? 'text-blue-100' : 'text-gray-600'}`} />
+                              <span className={`text-sm underline ${isSender ? 'text-white' : 'text-blue-700'}`}>
+                                {message.attachmentUrl.split('-').pop().substring(0, 20)}...
+                              </span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {/* Render message content only if it exists */}
+                      {message.content && message.content.trim() !== '' && (
+                        <p className="text-sm break-words">{message.content}</p>
+                      )}
+                      <div className={`text-xs mt-1 ${isSender ? 'text-blue-100' : 'text-gray-400'} flex items-center ${isSender ? 'justify-end' : 'justify-start'} space-x-1.5`}>
+                        <span>{format(new Date(message.createdAt), 'p')}</span>
+                        {message.isEdited && <span className="italic text-xs">(edited)</span>}
+                        {isSender && (
+                          isSending ? (
+                            <span className="text-xs italic">sending...</span>
+                          ) : message.isRead ? (
+                            <CheckIcon className="h-4 w-4 text-green-300" title={`Read at ${message.readAt ? format(new Date(message.readAt), 'p') : 'unknown time'}`} />
+                          ) : (
+                            <CheckIcon className="h-4 w-4 text-gray-400" title="Sent" />
+                          )
                         )}
                       </div>
-                    )}
-                    {/* Render message content only if it exists */}
-                    {message.content && message.content.trim() !== '' && (
-                      <p className="text-sm break-words">{message.content}</p>
-                    )}
-                    <div className={`text-xs mt-1 ${isSender ? 'text-blue-100' : 'text-gray-400'} flex items-center ${isSender ? 'justify-end' : 'justify-start'} space-x-1.5`}>
-                      <span>{format(new Date(message.createdAt), 'p')}</span>
-                      {message.isEdited && <span className="italic text-xs">(edited)</span>}
-                      {isSender && message.isRead && (
-                        <CheckIcon className="h-4 w-4 text-green-300" title={`Read at ${format(new Date(message.readAt), 'p')}`} />
-                      )}
-                      {isSender && !message.isRead && (
-                        <CheckIcon className="h-4 w-4 text-gray-400" title={`Sent`} />
+                      {/* Edit/Delete buttons shown on hover for sender */}
+                      {showEditDelete && !isSending && (
+                        <div className={`absolute -top-2 ${isSender ? '-left-8' : '-right-8'} flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                          <button
+                            onClick={() => {
+                              setEditingMessageId(messageId);
+                              setEditContent(message.content || '');
+                            }}
+                            className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 shadow-sm"
+                            title="Edit"
+                          >
+                            <PencilIcon className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMessage(messageId)}
+                            className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600 shadow-sm"
+                            title="Delete"
+                          >
+                            <TrashIcon className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
-                    {/* Edit/Delete buttons shown on hover for sender */}
-                    {showEditDelete && (
-                      <div className={`absolute -top-2 ${isSender ? '-left-8' : '-right-8'} flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
-                        <button
-                          onClick={() => {
-                            setEditingMessageId(messageId);
-                            setEditContent(message.content);
-                          }}
-                          className={`p-1 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 shadow-sm`}
-                          title="Edit"
-                        >
-                          <PencilIcon className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMessage(messageId)}
-                          className={`p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600 shadow-sm`}
-                          title="Delete"
-                        >
-                          <TrashIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
         {/* Typing Indicator */}
         {otherUserTyping && (
           <div className="flex justify-start">
-            <div className="px-3 py-1.5 rounded-lg shadow bg-gray-200 text-gray-600 text-sm italic">
+            <div className="px-3 py-1.5 rounded-lg shadow bg-gray-200 text-gray-600 text-sm italic flex items-center">
+              <div className="flex space-x-1 mr-2">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
               typing...
             </div>
           </div>
@@ -698,7 +757,7 @@ const Conversation = ({ userId, socket }) => {
           <input
             type="text"
             value={newMessage}
-            onChange={handleTyping} // Use handleTyping for input changes
+            onChange={handleTyping} 
             placeholder="Type a message..."
             className="flex-1 border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
             disabled={loading}

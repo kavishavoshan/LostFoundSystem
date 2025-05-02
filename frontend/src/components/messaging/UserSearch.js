@@ -30,6 +30,31 @@ const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
     }
   }, [searchQuery]);
 
+  // Helper function to get display name from user data
+  const getDisplayName = (user) => {
+    // If firstName exists, use it
+    if (user.firstName) {
+      return `${user.firstName} ${user.lastName || ''}`;
+    }
+    // Otherwise extract name from email (part before @)
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    // Fallback
+    return 'User';
+  };
+
+  // Helper function to get avatar text
+  const getAvatarText = (user) => {
+    if (user.firstName) {
+      return `${user.firstName[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
+    }
+    if (user.email) {
+      return user.email.split('@')[0][0].toUpperCase();
+    }
+    return '?';
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all duration-300 ease-out scale-95 opacity-0 animate-modal-pop-in">
@@ -90,7 +115,8 @@ const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
                   .filter(user => (user._id || user.id) !== (currentUser?._id || currentUser?.id))
                   .map((user) => {
                     const userId = user._id || user.id;
-                    const avatarText = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || '?';
+                    const avatarText = getAvatarText(user);
+                    const displayName = getDisplayName(user);
                     return (
                       <button
                         key={userId}
@@ -111,7 +137,7 @@ const UserSearch = ({ onSelectUser, onClose, currentUser }) => {
                         {/* User Info */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm text-gray-800 truncate">
-                            {user.firstName || 'Unknown'} {user.lastName || ''}
+                            {displayName}
                           </h3>
                           <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>

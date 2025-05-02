@@ -91,8 +91,11 @@ export const initializeSocket = (token) => {
         userId // Explicitly include userId in the auth object
       },
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      autoConnect: true
     });
     
     // Add connection event listeners for debugging
@@ -107,6 +110,38 @@ export const initializeSocket = (token) => {
     
     socket.on('connect_error', (error) => {
       console.error('[Socket] Connection error:', error.message);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('[Socket] Disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        // The disconnection was initiated by the server, need to reconnect manually
+        setTimeout(() => {
+          console.log('[Socket] Attempting to reconnect after server disconnect...');
+          socket.connect();
+        }, 1000);
+      }
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`[Socket] Reconnected after ${attemptNumber} attempts`);
+      // Re-authenticate after reconnection
+      if (userId) {
+        socket.emit('authenticate', { userId, token: cleanToken });
+        console.log('[Socket] Re-sent authentication event after reconnection');
+      }
+    });
+
+    socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`[Socket] Reconnection attempt ${attemptNumber}`);
+    });
+
+    socket.on('reconnect_error', (error) => {
+      console.error('[Socket] Reconnection error:', error.message);
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.error('[Socket] Failed to reconnect after all attempts');
     });
     
     return socket;
@@ -184,8 +219,16 @@ export const getMessages = async (otherUserId, currentUserId) => {
 
 export const sendMessage = async (receiverId, content, attachmentUrl = null) => {
   try {
+    // Ensure Authorization header is set
+    const authHeader = axios.defaults.headers.common['Authorization'];
+    if (!authHeader) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      }
+    }
+
     const response = await axios.post(`${API_URL}/messages`, {
-      // receiverId is required, senderId will be extracted from JWT token on the server
       receiverId,
       content,
       attachmentUrl,
@@ -193,39 +236,27 @@ export const sendMessage = async (receiverId, content, attachmentUrl = null) => 
     return response.data;
   } catch (error) {
     console.error('Error sending message:', error);
-    // Create a test message if API call fails
-    const newMessage = {
-      id: Date.now(),
-      content,
-      // Get current user ID from localStorage for fallback
-      senderId: JSON.parse(localStorage.getItem('user'))?._id || JSON.parse(localStorage.getItem('user'))?.id, 
-      receiverId,
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      attachmentUrl
-    };
-    
-    if (!TEST_MESSAGES[receiverId]) {
-      TEST_MESSAGES[receiverId] = [];
-    }
-    TEST_MESSAGES[receiverId].push(newMessage);
-    return newMessage;
+    throw error; // Rethrow to let the component handle it
   }
 };
 
 export const deleteMessage = async (messageId, userId) => {
   try {
-        if (!userId) {
+    if (!userId) {
       console.error('Error: userId is required for deleteMessage');
-      return; // Or throw an error
+      throw new Error('Missing userId for delete operation');
     }
+    
+    if (!messageId) {
+      console.error('Error: messageId is required for deleteMessage');
+      throw new Error('Missing messageId for delete operation');
+    }
+    
     await axios.delete(`${API_URL}/messages/${messageId}?userId=${userId}`);
+    return true;
   } catch (error) {
     console.error('Error deleting message:', error);
-    // Remove from test messages if API call fails
-    Object.keys(TEST_MESSAGES).forEach(userId => {
-      TEST_MESSAGES[userId] = TEST_MESSAGES[userId].filter(msg => msg.id !== messageId);
-    });
+    throw error; // Rethrow to let the component handle it
   }
 };
 
@@ -244,50 +275,47 @@ export const markMessageAsRead = async (messageId, userId) => {
     
     console.log(`Marking message ${messageId} as read for user ${userId}`);
     await axios.post(`${API_URL}/messages/${messageId}/read?userId=${userId}`);
+    return true;
   } catch (error) {
     console.error('Error marking message as read:', error);
-    // Mark as read in test messages if API call fails
-    Object.keys(TEST_MESSAGES).forEach(userId => {
-      TEST_MESSAGES[userId] = TEST_MESSAGES[userId].map(msg => 
-        msg.id === messageId ? { ...msg, isRead: true } : msg
-      );
-    });
-    // Re-throw the error so the component can handle it if needed
-    throw error;
+    throw error; // Rethrow to let the component handle it
   }
 };
 
 export const editMessage = async (messageId, content, userId) => {
   try {
+    if (!messageId || !content || !userId) {
+      console.error('Error: messageId, content, and userId are required for editMessage');
+      throw new Error('Missing required parameters for edit operation');
+    }
+
     const response = await axios.put(`${API_URL}/messages/${messageId}`, {
-            content,
+      content,
       userId,
     });
     return response.data;
   } catch (error) {
     console.error('Error editing message:', error);
-    // Edit in test messages if API call fails
-    let editedMessage = null;
-    Object.keys(TEST_MESSAGES).forEach(userId => {
-      TEST_MESSAGES[userId] = TEST_MESSAGES[userId].map(msg => {
-        if (msg.id === messageId) {
-          editedMessage = { ...msg, content };
-          return editedMessage;
-        }
-        return msg;
-      });
-    });
-    return editedMessage;
+    throw error; // Rethrow to let the component handle it
   }
 };
 
 export const searchUsers = async (query) => {
   try {
+    // Ensure Authorization header is set
+    const authHeader = axios.defaults.headers.common['Authorization'];
+    if (!authHeader) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      }
+    }
+
     const response = await axios.get(`${API_URL}/users/search?query=${query}`);
     return response.data;
   } catch (error) {
     console.error('Error searching users:', error);
-    throw error; // Re-throw the error to be handled by the component
+    throw error; // Rethrow to let the component handle it
   }
 };
 
@@ -302,9 +330,7 @@ export const initializeConversation = async (currentUserId, otherUserId) => {
     console.log(`Initializing conversation between ${currentUserId} and ${otherUserId}`);
     
     // Send an initial message to create the conversation
-    // This ensures the conversation appears in the list
     const initialMessage = {
-      // Remove senderId as it will be set by the backend from the JWT token
       receiverId: otherUserId,
       content: '👋 Hello!',
     };
@@ -314,14 +340,6 @@ export const initializeConversation = async (currentUserId, otherUserId) => {
     return response.data;
   } catch (error) {
     console.error('Error initializing conversation:', error);
-    // Return a mock message if API call fails
-    return {
-      id: Date.now(),
-      content: '👋 Hello!',
-      senderId: currentUserId,
-      receiverId: otherUserId,
-      createdAt: new Date().toISOString(),
-      isRead: false
-    };
+    throw error; // Rethrow to let the component handle it
   }
 };

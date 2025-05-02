@@ -36,6 +36,31 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
     }
   };
 
+  // Helper function to get display name from user data
+  const getDisplayName = (user) => {
+    // If firstName exists, use it
+    if (user.firstName) {
+      return `${user.firstName} ${user.lastName || ''}`;
+    }
+    // Otherwise extract name from email (part before @)
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    // Fallback
+    return 'User';
+  };
+
+  // Helper function to get avatar text
+  const getAvatarText = (user) => {
+    if (user.firstName) {
+      return `${user.firstName[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
+    }
+    if (user.email) {
+      return user.email.split('@')[0][0].toUpperCase();
+    }
+    return '?';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-4">
@@ -85,12 +110,9 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
                          lastMessageTime.getMonth() === today.getMonth() &&
                          lastMessageTime.getFullYear() === today.getFullYear();
           
-          // Get user's name, with fallbacks to ensure something is displayed
-          const userName = conversation.otherUser.firstName || 
-                          conversation.otherUser.name?.split(' ')[0] || 
-                          'User';
-          const userLastName = conversation.otherUser.lastName || 
-                             (conversation.otherUser.name?.split(' ')[1] || '');
+          // Get display name and avatar text using helper functions
+          const displayName = getDisplayName(conversation.otherUser);
+          const avatarText = getAvatarText(conversation.otherUser);
           
           return (
             <div
@@ -104,8 +126,7 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
                 <div className="flex-shrink-0 relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shadow-md transform transition-transform duration-200 hover:scale-105">
                     <span className="text-white font-medium">
-                      {userName[0] || '?'}
-                      {userLastName[0] || ''}
+                      {avatarText}
                     </span>
                   </div>
                   {isUnread && (
@@ -115,7 +136,7 @@ const ConversationsList = ({ onSelectUser, selectedUserId }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className={`text-sm font-semibold ${isUnread ? 'text-indigo-800' : 'text-gray-900'} truncate`}>
-                      {userName} {userLastName}
+                      {displayName}
                     </h3>
                     <span className="text-xs text-gray-500">
                       {lastMessageTime && (
