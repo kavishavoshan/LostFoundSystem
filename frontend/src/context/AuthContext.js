@@ -8,14 +8,30 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Initialize auth state from localStorage
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      checkAuth();
-    } else {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          
+          // Verify token validity and refresh user data
+          await checkAuth();
+        } catch (error) {
+          console.error('Error initializing auth:', error);
+          await logout();
+        }
+      }
       setLoading(false);
-    }
+    };
+
+    initializeAuth();
   }, []);
 
   const checkAuth = async () => {
@@ -35,19 +51,17 @@ export const AuthProvider = ({ children }) => {
       
       // Then verify with server
       const response = await axios.get('http://localhost:3001/auth/me');
-      setUser(response.data);
+      const userData = response.data;
+      
+      setUser(userData);
       setIsAuthenticated(true);
-      // Update stored user data
-      localStorage.setItem('user', JSON.stringify(response.data));
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return true;
     } catch (error) {
-      console.error('Auth verification failed:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      delete axios.defaults.headers.common['Authorization'];
-      setUser(null);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
+      console.error('Auth check failed:', error);
+      await logout();
+      return false;
     }
   };
 
@@ -106,13 +120,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     setIsAuthenticated(false);
   };
+
+  const value = {
+    isAuthenticated,
+    user,
+    login,
+    logout,
+    checkAuth,
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>;
+  }
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, loading, login, register, logout }}>

@@ -1,13 +1,23 @@
-import { IsString, IsNotEmpty, IsArray, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsNumber } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateFoundItemDto {
   @IsString()
   @IsNotEmpty()
   userId: string;
 
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === null) return null;
+    if (value instanceof Buffer) return value;
+    if (typeof value === 'string') return Buffer.from(value);
+    return value;
+  })
+  image?: Buffer | null;
+
   @IsString()
-  @IsNotEmpty()
-  image: string;
+  @IsOptional()
+  imageContentType?: string | null;
 
   @IsString()
   @IsNotEmpty()
@@ -29,4 +39,4 @@ export class CreateFoundItemDto {
   @IsNumber({}, { each: true })
   @IsOptional()
   clip_vector?: number[];
-} 
+}

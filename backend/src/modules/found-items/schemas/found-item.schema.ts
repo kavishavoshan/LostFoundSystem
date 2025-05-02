@@ -19,7 +19,7 @@ export class FoundItem {
   category: string;
 
   @Prop({ required: true })
-  imageUrl: string;
+  image: string;
 
   @Prop({ default: 'found' })
   status: string;
