@@ -26,6 +26,7 @@ const ItemForm = ({ type = 'lost', onClose }) => {
   const [isPredicting, setIsPredicting] = useState(false);
   const { user: authUser } = useAuth();
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [processedImage, setProcessedImage] = useState(null);
 
   const {
     register,
@@ -108,6 +109,7 @@ const ItemForm = ({ type = 'lost', onClose }) => {
         const processedImage = await compressAndConvertImage(file);
         console.log('Processed image:', processedImage);
         setValue('image', processedImage);
+        setProcessedImage(processedImage);
         clearErrors('image');
       } catch (error) {
         console.error('Error processing image:', error);
@@ -132,15 +134,18 @@ const ItemForm = ({ type = 'lost', onClose }) => {
         description: data.description.trim(),
         contactNumber: data.contactNumber.trim(),
         category: data.category,
-        image: data.image,
+        image: processedImage,
         location: data.location.trim(),
       };
+
+      console.log("SUBMIT PAYLOAD", submitPayload);
 
       const response = type === 'lost'
         ? await createLostItem(submitPayload)
         : await createFoundItem(submitPayload);
 
       console.log('Item created successfully:', response);
+      setProcessedImage(null);
       reset();
       setPreviewUrl(null);
       onClose?.();

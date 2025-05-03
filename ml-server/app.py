@@ -17,102 +17,94 @@ import requests
 import base64
 import io
 
-
-API_URL = "https://3465-34-16-228-51.ngrok-free.app/encode"
-
 # Embedding search service
+API_URL = "http://6b60-34-143-174-25.ngrok-free.app/encode"
 def encode_image_api(image_data):
     try:
-        # Handle different input types
+        # Handle base64 image data
         if isinstance(image_data, str):
+            if image_data.startswith('data:image'):
+                # Remove data URL prefix
+                image_data = image_data.split(',')[1]
+            
             try:
-                # Handle data URL format from MongoDB
-                if image_data.startswith('data:'):
-                    # Split the data URL to get content type and base64 data
-                    content_type = image_data.split(';')[0].split(':')[1]
-                    base64_data = image_data.split('base64,')[1]
-                    
-                    # Decode base64 data
-                    image_bytes = base64.b64decode(base64_data)
-                    
-                    # Convert to PIL Image for validation
-                    img = Image.open(io.BytesIO(image_bytes))
-                    
-                    # Convert to PNG format
-                    output = io.BytesIO()
-                    img.save(output, format='PNG')
-                    image_bytes = output.getvalue()
-                    
-                    print(f"Successfully processed image of type: {content_type}")
-                else:
-                    print("Image data is not in expected data URL format")
-                    return None
-                    
+                # Clean and pad base64 string
+                image_data = image_data.strip()
+                # Remove any non-base64 characters
+                image_data = ''.join(c for c in image_data if c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+                padding = 4 - (len(image_data) % 4)
+                if padding != 4:
+                    image_data += '=' * padding
+                # Decode base64 to bytes
+                image_bytes = base64.b64decode(image_data)
             except Exception as e:
-                print(f"Error processing image data: {str(e)}")
-                print(f"First 100 chars of image_data: {image_data[:100]}")
+                print(f"Base64 decode error: {e}")
                 return None
         else:
-            print("Received non-string image data")
+            # Assume it's already bytes
+            image_bytes = image_data
+
+        # Convert bytes to PIL Image to verify it's valid
+        try:
+            img = Image.open(io.BytesIO(image_bytes))
+            # Convert to RGB mode if needed
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            # Save to bytes with proper format
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG')
+            image_bytes = img_byte_arr.getvalue()
+        except Exception as e:
+            print(f"Image processing error: {e}")
             return None
 
-        # Prepare the request
+        # Create multipart form data
         files = {
             'image': ('image.png', image_bytes, 'image/png')
         }
-        
-        print(f"Sending request to {API_URL} with {len(image_bytes)} bytes")
+
+        # Make request with increased timeout
         response = requests.post(
-            API_URL, 
+            API_URL,
             files=files,
-            timeout=30
+            timeout=30,
+            headers={'Accept': 'application/json'}
         )
-        
-        print(f"Response status: {response.status_code}")
-        
+
         if response.status_code == 200:
-            data = response.json()
-            if 'embedding' in data:
-                return np.array(data['embedding'])
-            print("No embedding in response")
+            try:
+                data = response.json()
+                if 'embedding' in data:
+                    return np.array(data['embedding'])
+                print(f"No embedding in response. Response: {data}")
+                return None
+            except ValueError as e:
+                print(f"JSON parse error: {e}")
+                return None
         else:
             print(f"Server error {response.status_code}: {response.text[:200]}")
-        
-        return None
+            return None
 
     except Exception as e:
-        print(f"Error in encode_image_api: {str(e)}")
+        print(f"Error processing image: {str(e)}")
         return None
 
 def perform_similarity_search(item_with_image_to_search, array_of_items):
     found_embeddings = []
-    found_items = []
+    found_items = []  # Store items for later mapping
     
+    # Encode the image to search
     try:
-        if not item_with_image_to_search.get("image"):
-            print("No image provided in search item")
-            return []
-            
-        print(f"Processing search item: {item_with_image_to_search.get('description', 'No description')}")
-        search_embedding = encode_image_api(item_with_image_to_search["image"])
-        
-        if search_embedding is None:
-            print("Failed to get embedding for search image")
-            return []
-            
         for item in array_of_items:
-            if item.get("image"):
-                print(f"Processing item: {item.get('description', 'No description')}")
-                embedding = encode_image_api(item["image"])
-                
-                if embedding is not None:
+            if item["image"]:  # Check if image exists
+                image_path = item["image"]
+                embedding = encode_image_api(image_path)  # Use API for encoding
+
+                if embedding is not None:  # Check for successful encoding
                     found_embeddings.append(embedding)
-                    found_items.append(item)
-                else:
-                    print(f"Failed to get embedding for item: {item.get('_id')}")
+                    found_items.append(item)  # Store corresponding item
         
         if not found_embeddings:
-            print("No valid embeddings found")
             return []
             
         # Stack all embeddings
@@ -292,6 +284,7 @@ def get_all_items_from_mongodb():
 
     return lost_items_list, found_items_list
 
+@app.route('/search', methods=['GET'])
 def similarity_search_lost_and_found_items():
     # Get all the lost and found items from mongodb
     lost_items, found_items = get_all_items_from_mongodb()
@@ -321,8 +314,6 @@ if __name__ == '__main__':
         # Create model directory if it doesn't exist
         os.makedirs('model', exist_ok=True)
         print("Model directory created")
-
-        similarity_search_lost_and_found_items()
 
         # Run the Flask app
         app.run(port=5001, debug=True)
