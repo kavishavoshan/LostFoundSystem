@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL = "http://localhost:3001/found-items";
-const ML_SERVER_URL = "http://localhost:5001/upload-found-item";
+const ML_SERVER_URL = "http://localhost:5001/predict";  // Updated endpoint
 
 // ✅ GET all found items
 export const getFoundItems = async () => {

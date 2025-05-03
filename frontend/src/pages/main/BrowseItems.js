@@ -79,39 +79,50 @@ const BrowseItems = () => {
     setIsSearching(true);
     
     try {
-      // Create form data for the image
+      // First, get the category prediction from ML model
       const formData = new FormData();
-      formData.append('image', image);
+      formData.append('image', image);  // Changed from 'file' to 'image'
 
-      // TODO: Replace with actual API call to search endpoint
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const categoryResponse = await fetch('http://localhost:5001/predict', {  // Changed endpoint
+        method: 'POST',
+        body: formData
+      });
       
-      const mockResults = [
-        {
-          id: 1,
-          image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAA...', // Base64 image data
-          title: 'Black Leather Wallet',
-          location: 'Found in Cafeteria',
-          date: '2023-05-15',
-          status: 'found',
-          contact: 'security@example.com'
-        },
-        {
-          id: 2,
-          image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAA...', // Base64 image data
-          title: 'Black Wallet',
-          location: 'Lost at Library',
-          date: '2023-05-10',
-          status: 'lost',
-          contact: 'john.doe@example.com'
-        }
-      ];
+      if (!categoryResponse.ok) {
+        throw new Error('Failed to get category prediction');
+      }
       
-      setSearchResults(mockResults);
+      const categoryData = await categoryResponse.json();
+      const predictedCategory = categoryData.predicted_category || 'Unknown';  // Updated to match ML server response
+
+      // Now fetch items matching the predicted category
+      const [foundResponse, lostResponse] = await Promise.all([
+        fetch('http://localhost:3001/found-items'),
+        fetch('http://localhost:3001/lost-items')
+      ]);
+
+      const foundItems = await foundResponse.json();
+      const lostItems = await lostResponse.json();
+
+      // Filter items by predicted category
+      const matchingItems = [...foundItems, ...lostItems]
+        .filter(item => item.category === predictedCategory)
+        .map(item => ({
+          id: item._id,
+          image: item.image,
+          title: item.description,
+          location: item.location,
+          date: new Date(item.createdAt).toLocaleDateString(),
+          status: foundItems.some(f => f._id === item._id) ? 'found' : 'lost',
+          contact: item.contactNumber,
+          category: item.category
+        }));
+      
+      setSearchResults(matchingItems);
       
       Swal.fire({
         title: 'Search Complete!',
-        text: `Found ${mockResults.length} similar items`,
+        text: `Found ${matchingItems.length} ${predictedCategory} items`,
         icon: 'success',
         confirmButtonText: 'OK'
       });
