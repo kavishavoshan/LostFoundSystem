@@ -66,11 +66,14 @@ export class UserController {
   }
 
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   getCurrentUser(@Req() req: RequestWithUser) {
+    console.log(req.user);
     return this.userService.findOne(req.user.userId);
   }
 
   @Patch('me')
+  @UseGuards(JwtAuthGuard)
   updateCurrentUser(@Req() req: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(req.user.userId, updateUserDto, req.user.userId);
   }
@@ -134,5 +137,12 @@ export class UserController {
   @UseInterceptors(FileInterceptor('file'))
   uploadProfileImage(@UploadedFile() file: any, @Req() req: RequestWithUser) {
     return this.userService.uploadProfileImage(req.user.userId, file, 'avatar');
+  }
+
+  @Post('upload-cover-image')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  uploadCoverImage(@UploadedFile() file: any, @Req() req: RequestWithUser) {
+    return this.userService.uploadProfileImage(req.user.userId, file, 'cover');
   }
 }
