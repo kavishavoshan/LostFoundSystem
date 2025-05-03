@@ -32,35 +32,53 @@ const TABLE_HEAD = [
   "Action",
 ];
 
-// API functions
-const updateLostItem = async (id, updatedData) => {
-  try {
-    const response = await axios.put(
-      `${API_BASE_URL}/lost-items/${id}`,
-      updatedData
-    );
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating lost item with ID ${id}:`, error);
-    throw new Error(
-      error.response?.data?.message || "Failed to update lost item"
-    );
-  }
-};
+export const updateLostItem = async (id, item) => {
+  const formData = new FormData();
 
-const updateFoundItem = async (id, updatedData) => {
-  try {
-    const response = await axios.put(
-      `${API_BASE_URL}/found-items/${id}`,
-      updatedData
-    );
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating found item with ID ${id}:`, error);
-    throw new Error(
-      error.response?.data?.message || "Failed to update found item"
-    );
+  formData.append('description', item.description);
+  formData.append('location', item.location);
+  formData.append('contactNumber', item.contactNumber);
+  formData.append('category', item.category);
+  formData.append('userId', item.userId || DEFAULT_USER_ID);
+  formData.append('status', item.status || 'lost');
+
+  if (item.clip_vector) {
+    formData.append('clip_vector', JSON.stringify(item.clip_vector));
   }
+
+  if (item.image && item.image instanceof File) {
+    formData.append('image', item.image);
+  }
+
+  return await axios.patch(`${API_BASE_URL}/lost-items/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+export const updateFoundItem = async (id, item) => {
+  const formData = new FormData();
+
+  formData.append('description', item.description);
+  formData.append('location', item.location);
+  formData.append('contactNumber', item.contactNumber);
+  formData.append('category', item.category);
+  formData.append('userId', item.userId || DEFAULT_USER_ID);
+  formData.append('status', item.status || 'found');
+
+  if (item.clip_vector) {
+    formData.append('clip_vector', JSON.stringify(item.clip_vector));
+  }
+
+  if (item.image && item.image instanceof File) {
+    formData.append('image', item.image);
+  }
+
+  return await axios.patch(`${API_BASE_URL}/found-items/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
 
 const createLostItem = async (itemData) => {
@@ -240,10 +258,20 @@ function UserTable() {
       const itemType = items.find((item) => item._id === id)?.type;
       let response;
 
+      // Create the item data object
+      const itemData = {
+        description: editFormData.description,
+        location: editFormData.location,
+        contactNumber: editFormData.contactNumber,
+        category: editFormData.category,
+        userId: DEFAULT_USER_ID, // Use the default user ID
+        status: itemType === "lost" ? "lost" : "found",
+      };
+
       if (itemType === "lost") {
-        response = await updateLostItem(id, editFormData);
+        response = await updateLostItem(id, itemData);
       } else {
-        response = await updateFoundItem(id, editFormData);
+        response = await updateFoundItem(id, itemData);
       }
 
       setItems(

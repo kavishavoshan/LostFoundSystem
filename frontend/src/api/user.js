@@ -59,7 +59,11 @@ export const getCurrentUser = async () => {
       
       // Fetch from server in the background to ensure data is fresh
       try {
-        const response = await api.get('/auth/me');
+        const response = await api.get('/auth/me',{
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         console.log('Responsse from background fetch:', response.data);
         if (response.data) {
           localStorage.setItem('user', JSON.stringify(response.data));
@@ -132,8 +136,14 @@ const getStoredUser = () => {
 
 // Update user profile
 export const updateUserProfile = async (userData) => {
+  const token = getAuthToken();
   try {
-    const response = await api.patch('/users/me', userData);
+    const response = await api.patch('/users/me', userData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
     // Update stored user data
     if (response.data) {
       try {
@@ -184,6 +194,7 @@ export const getUserReviews = async () => {
 
 // Upload profile image
 export const uploadProfileImage = async (file, type = 'avatar') => {
+  const token = getAuthToken();
   try {
     const formData = new FormData();
     formData.append('file', file);
@@ -194,6 +205,7 @@ export const uploadProfileImage = async (file, type = 'avatar') => {
     const response = await api.post('/users/upload-profile-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
       },
     });
     
@@ -210,7 +222,53 @@ export const uploadProfileImage = async (file, type = 'avatar') => {
     }
     
     return {
-      profilePicture: response.data.profilePicture,
+      profilePicture: response.data.avatarUrl,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error uploading profile image:', error);
+    if (error.response) {
+      console.error('Error response:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Error request:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    throw error;
+  }
+};
+
+//Upload Cover Image
+export const uploadCoverImage = async (file, type = 'cover') => {
+  const token = getAuthToken();
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    console.log('Uploading profile image:', file.name, 'type:', type);
+    
+    const response = await api.post('/users/upload-cover-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    console.log('Upload response:', response.data);
+    
+    // Update stored user data with new image URL
+    if (response.data) {
+      const currentUser = getStoredUser() || {};
+      const updatedUser = {
+        ...currentUser,
+        cover: response.data.profilePicture,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+    
+    return {
+      coverImageUrl: response.data.coverImageUrl,
       success: true
     };
   } catch (error) {

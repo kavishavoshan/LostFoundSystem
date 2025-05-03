@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import profile from "../../images/profile.jpg";
-import { getCurrentUser, updateUserProfile, getUserReviews, uploadProfileImage } from "../../api/user";
+import { getCurrentUser, updateUserProfile, getUserReviews, uploadProfileImage, uploadCoverImage } from "../../api/user";
 import { getAuthToken } from "../../api/auth";
 import Swal from "sweetalert2";
 import { useAuth } from "../../context/AuthContext";
@@ -79,8 +79,8 @@ function Profile() {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           setPhoneNumber(parsedUser.mobileNumber || "");
-          setAvatarImage(parsedUser.avatar || "/img/avatar1.jpg");
-          setCoverImage(parsedUser.coverImage || null);
+          setAvatarImage(parsedUser.avatarUrl || "/img/avatar1.jpg");
+          setCoverImage(parsedUser.coverImageUrl || null);
           setAboutText(parsedUser.about || "");
           setSocialLinks({
             github: parsedUser.socialLinks?.github || "",
@@ -95,8 +95,8 @@ function Profile() {
           const userData = response.data;
           setUser(userData);
           setPhoneNumber(userData.mobileNumber || "");
-          setAvatarImage(userData.avatar || "/img/avatar1.jpg");
-          setCoverImage(userData.coverImage || null);
+          setAvatarImage(userData.avatarUrl || "/img/avatar1.jpg");
+          setCoverImage(userData.coverImageUrl || null);
           setAboutText(userData.about || "");
           setSocialLinks({
             github: userData.socialLinks?.github || "",
@@ -119,7 +119,7 @@ function Profile() {
   }, [navigate]);
 
   // Handle image uploads
-  const handleImageUpload = async (e, setImage, type = 'avatar') => {
+  const handleImageUpload = async (e, setImage, type='avatar') => {
     const file = e.target.files[0];
     setUploadError("");
 
@@ -148,6 +148,60 @@ function Profile() {
       // Update the image preview
       if (response && response.profilePicture) {
         setImage(response.profilePicture);
+        
+        // Show success message
+        Swal.fire({
+          title: "Success!",
+          text: "Profile image updated successfully",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error in handleImageUpload:', error);
+      setUploadError("Failed to upload image. Please try again.");
+      Swal.fire({
+        title: "Error",
+        text: "Failed to upload image. Please try again.",
+        icon: "error"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCoverImageUpload = async (e, setImage, type='cover') => {
+    const file = e.target.files[0];
+    setUploadError("");
+
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.match("image.*")) {
+      setUploadError("Please select an image file (JPEG, PNG, GIF)");
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("File is too large (max 5MB)");
+      return;
+    }
+
+    try {
+      // Show loading state
+      setIsLoading(true);
+
+      // Upload the image
+      const response = await uploadCoverImage(file, type);
+      console.log('Upload response in component:', response);
+      
+      // Update the image preview
+      if (response && response.coverImageUrl) {
+        setImage(response.coverImageUrl);
         
         // Show success message
         Swal.fire({
@@ -307,7 +361,7 @@ function Profile() {
         <div className="relative h-48 sm:h-64 md:h-80 w-full bg-gray-100">
           {coverImage ? (
             <img
-              src={coverImage}
+              src={`http://localhost:3001${coverImage}`} 
               alt="Cover"
               className="w-full h-full object-cover"
             />
@@ -330,7 +384,7 @@ function Profile() {
           <input
             type="file"
             ref={coverInputRef}
-            onChange={(e) => handleImageUpload(e, setCoverImage, 'cover')}
+            onChange={(e) => handleCoverImageUpload(e, setCoverImage, 'cover')}
             className="hidden"
             accept="image/*"
           />
@@ -343,7 +397,7 @@ function Profile() {
             <div className="relative -mt-20">
               <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden">
                 <img
-                  src={avatarImage}
+                  src={`http://localhost:3001${avatarImage}`} 
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />

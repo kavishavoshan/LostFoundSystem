@@ -18,11 +18,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req: RequestWithUser, @Res() res: Response) {
     try {
-      const userId = req.user._id || req.user.id;
+      console.log('Current user 123:', req.user);
+      const userId = req.user.userId;
       const user = await this.authService.getUserById(userId);
       console.log('Current user:', user);
-      const userObj = await user.toObject();
-      return res.status(HttpStatus.OK).send(userObj);
+      return res.status(HttpStatus.OK).send(user);
     } catch (error) {
       return res.status(HttpStatus.UNAUTHORIZED).json({
         status: 'error',

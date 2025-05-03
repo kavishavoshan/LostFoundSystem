@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsObject, ValidateNested, IsPhoneNumber, IsEmail, MinLength, Matches } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsObject,
+  ValidateNested,
+  IsPhoneNumber,
+  IsEmail,
+  MinLength,
+  Matches,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SocialLinksDto {
@@ -16,7 +25,6 @@ export class SocialLinksDto {
 }
 
 export class UpdateUserDto {
-
   @IsString()
   @IsOptional()
   firstName?: string;
@@ -45,10 +53,9 @@ export class UpdateUserDto {
   @IsOptional()
   profilePicture?: string;
 
-  @IsObject()
   @IsOptional()
-  @ValidateNested()
-  @Type(() => SocialLinksDto)
+  @IsObject()
+  @Type(() => SocialLinksDto) 
   socialLinks?: SocialLinksDto;
 
   @IsOptional()
@@ -61,7 +68,9 @@ export class UpdateUserDto {
   password?: string;
 
   @IsString()
-  @Matches(/^\+[0-9]{1,4}[0-9]{9,}$/, { message: 'Mobile number must include country code and be valid' })
+  @Matches(/^\+[0-9]{1,4}[0-9]{9,}$/, {
+    message: 'Mobile number must include country code and be valid',
+  })
   @IsOptional()
   mobileNumber?: string;
 }

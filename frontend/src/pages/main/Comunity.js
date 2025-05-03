@@ -440,7 +440,7 @@ function Community() {
         </div>
       </main>
       
-      <Footer />
+     
     </div>
   );
 }

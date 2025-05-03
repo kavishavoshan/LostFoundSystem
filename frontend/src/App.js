@@ -4,6 +4,7 @@ import Messaging from "./pages/Messaging";
 import Analytics from "./pages/Analytics";
 import Main from "./pages/main/main";
 import Home from "./pages/Home";
+import AboutUs from './pages/main/AboutUs';
 
 //User
 
@@ -52,6 +53,8 @@ function App() {
             <Route path="/usertable" element={<UserTable />} />
             <Route path="/adminlogin" element={<AdminLogin />} />
             <Route path="/userprofile" element={<UserProfile />} />
+            <Route path="/aboutus" element={<AboutUs />} />
+           
           </Routes>
         </main>
 
